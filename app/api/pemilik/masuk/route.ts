@@ -1,0 +1,2 @@
+import {NextResponse} from 'next/server';import{setOwnerSession}from '@/lib/auth';
+export async function POST(req:Request){const {password}=await req.json();if(!process.env.OWNER_PASSWORD)return NextResponse.json({message:'Akses pemilik belum dikonfigurasi.'},{status:503});if(password!==process.env.OWNER_PASSWORD)return NextResponse.json({message:'Kata sandi pemilik tidak sesuai.'},{status:401});await setOwnerSession();return NextResponse.json({ok:true})}
