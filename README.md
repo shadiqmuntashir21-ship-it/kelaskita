@@ -1,6 +1,20 @@
 # KelasKita
 
-KelasKita adalah aplikasi wali kelas berbahasa Indonesia yang berfokus pada pekerjaan harian guru: siswa, kehadiran, catatan, prestasi, tindak lanjut, komunikasi orang tua, agenda, dan laporan.
+KelasKita adalah ruang kerja digital wali kelas berbahasa Indonesia. Pelanggan masuk menggunakan **kode lisensi + PIN**, sedangkan Mode Demo memakai data contoh lokal dan tidak menulis ke database pelanggan.
+
+## Fitur V2
+- Beranda harian wali kelas
+- Kelola siswa + impor Excel
+- Kehadiran harian
+- Mata pelajaran (tambah/ubah/hapus)
+- Penilaian: tugas harian, ulangan harian, tengah semester, akhir semester, lainnya
+- Input nilai massal + remedial
+- Bobot nilai dan semester aktif
+- Jadwal pelajaran
+- Catatan, prestasi, tindak lanjut, komunikasi orang tua, agenda
+- Pusat Laporan Excel dan PDF
+- PWA dengan identitas visual KelasKita
+- Panel pemilik untuk lisensi pelanggan
 
 ## Stack
 - Next.js App Router
@@ -8,23 +22,8 @@ KelasKita adalah aplikasi wali kelas berbahasa Indonesia yang berfokus pada peke
 - Vercel
 - PWA
 
-## Model akses
-- Pelanggan masuk dengan **kode lisensi + PIN**.
-- Setiap lisensi memiliki ruang data sendiri di tingkat server.
-- **Mode Demo** menggunakan data dummy lokal dan tidak menulis ke database.
-- Panel `/pemilik` digunakan untuk menerbitkan dan mengaktif/nonaktifkan lisensi.
-
 ## Lingkungan
 Salin `.env.example` menjadi `.env.local`, lalu isi `DATABASE_URL`, `SESSION_SECRET`, dan `OWNER_PASSWORD`.
 
-## Menjalankan
-```bash
-npm install
-npm run dev
-```
-
 ## Database
-Skema ada di `database/schema.sql`.
-
-## Status
-Versi awal KelasKita siap untuk deployment production pertama.
+Skema induk ada di `database/schema.sql`. Penambahan V2 juga tersedia terpisah di `database/schema-v2.sql`.
