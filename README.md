@@ -32,3 +32,6 @@ Salin `.env.example` menjadi `.env.local`, lalu isi seluruh environment variable
 
 ## Database
 Skema induk ada di `database/schema.sql`. Snapshot V3 tersedia di `database/schema-v3.sql`.
+
+## Rilis Production
+KelasKita V3: administrasi wali kelas, laporan, dan penjualan lisensi.
