@@ -25,3 +25,6 @@ npm run dev
 
 ## Database
 Skema ada di `database/schema.sql`.
+
+## Status
+Versi awal KelasKita siap untuk deployment production pertama.
