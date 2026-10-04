@@ -1,0 +1,4 @@
+import {createHash,createCipheriv,createDecipheriv,randomBytes} from 'crypto';
+function key(){return createHash('sha256').update(process.env.SESSION_SECRET||'dev-kelaskita-session-secret-change-me').digest()}
+export function encryptSecret(value:string){const iv=randomBytes(12),cipher=createCipheriv('aes-256-gcm',key(),iv);const enc=Buffer.concat([cipher.update(value,'utf8'),cipher.final()]);const tag=cipher.getAuthTag();return `${iv.toString('base64url')}.${tag.toString('base64url')}.${enc.toString('base64url')}`}
+export function decryptSecret(value?:string|null){if(!value)return'';try{const[a,b,c]=value.split('.');const d=createDecipheriv('aes-256-gcm',key(),Buffer.from(a,'base64url'));d.setAuthTag(Buffer.from(b,'base64url'));return Buffer.concat([d.update(Buffer.from(c,'base64url')),d.final()]).toString('utf8')}catch{return''}}

@@ -50,15 +50,28 @@ export const demoData = {
     {id:'a2',student_id:'d8',student_name:'Nadya Anjani',title:'Finalis Presentasi Kreatif',category:'Akademik',level:'Sekolah',achieved_at:'2026-09-24'}
   ],
   followUps:[
-    {id:'f1',student_id:'d1',student_name:'Ahmad Fauzan',title:'Konfirmasi ketidakhadiran',action:'Hubungi orang tua dan catat hasil komunikasi.',due_date:'2026-10-04',status:'Belum Dimulai'},
+    {id:'f1',student_id:'d1',student_name:'Ahmad Fauzan',title:'Konfirmasi ketidakhadiran',action:'Lakukan tindak lanjut ketidakhadiran dan catat hasilnya.',due_date:'2026-10-04',status:'Belum Dimulai'},
     {id:'f2',student_id:'d3',student_name:'Fadli Akbar',title:'Pembinaan ketepatan waktu',action:'Diskusi singkat setelah jam pelajaran.',due_date:'2026-10-05',status:'Sedang Dilakukan'}
   ],
-  communications:[{id:'c1',student_id:'d5',student_name:'Rizky Maulana',method:'WhatsApp',topic:'Konfirmasi sakit',result:'Orang tua menginformasikan Rizky sedang demam.',communicated_at:'2026-10-04T07:10:00+08:00'}],
   agendas:[
     {id:'g1',title:'Pengumpulan proyek desain',category:'Akademik',agenda_date:'2026-10-04',agenda_time:'10:30',description:'Pastikan seluruh kelompok mengumpulkan berkas.',is_done:false},
     {id:'g2',title:'Rapat singkat pengurus kelas',category:'Kelas',agenda_date:'2026-10-04',agenda_time:'13:00',description:'Evaluasi kebersihan dan piket.',is_done:false},
-    {id:'g3',title:'Pertemuan orang tua Ahmad',category:'Orang Tua',agenda_date:'2026-10-05',agenda_time:'09:00',description:'Pembahasan kehadiran.',is_done:false}
+    {id:'g3',title:'Pertemuan pembinaan Ahmad',category:'Pembinaan',agenda_date:'2026-10-05',agenda_time:'09:00',description:'Pembahasan kehadiran.',is_done:false}
   ],
   subjects,schedules,assessments,scores,
-  academicSettings:{active_semester:'Ganjil',calculation_mode:'Otomatis',daily_weight:30,quiz_weight:30,semester_weight:40}
+  academicSettings:{active_semester:'Ganjil',calculation_mode:'Otomatis',daily_weight:30,quiz_weight:30,semester_weight:40},
+  attendanceSummary:demoStudents.map((s,i)=>({student_id:s.id,total:40,hadir:35-i,sakit:i%2,izin:i%3,alfa:i===0?3:i===2?2:0,terlambat:i===2?5:i%2})),
+  reportNotes:[],
+  adminItems:[
+    {id:'adm1',item_key:'profil-siswa',label:'Data siswa lengkap',category:'Data Kelas',is_completed:true,sort_order:10},
+    {id:'adm2',item_key:'struktur-kelas',label:'Struktur organisasi kelas',category:'Data Kelas',is_completed:true,sort_order:20},
+    {id:'adm3',item_key:'jadwal-pelajaran',label:'Jadwal pelajaran',category:'Jadwal',is_completed:true,sort_order:30},
+    {id:'adm4',item_key:'jadwal-piket',label:'Jadwal piket',category:'Jadwal',is_completed:false,sort_order:40},
+    {id:'adm5',item_key:'kehadiran',label:'Rekap kehadiran',category:'Kehadiran',is_completed:true,sort_order:50},
+    {id:'adm6',item_key:'nilai',label:'Rekap nilai siswa',category:'Akademik',is_completed:true,sort_order:60},
+    {id:'adm7',item_key:'catatan-rapor',label:'Catatan rapor',category:'Pelaporan',is_completed:false,sort_order:100}
+  ],
+  officers:[{id:'o1',student_id:'d2',student_name:'Siti Rahma',role_name:'Ketua Kelas',sort_order:1},{id:'o2',student_id:'d4',student_name:'Nabila Putri',role_name:'Sekretaris',sort_order:2}],
+  duties:[{id:'du1',student_id:'d1',student_name:'Ahmad Fauzan',day_name:'Senin',task_name:'Piket Kelas'},{id:'du2',student_id:'d2',student_name:'Siti Rahma',day_name:'Senin',task_name:'Piket Kelas'},{id:'du3',student_id:'d3',student_name:'Fadli Akbar',day_name:'Selasa',task_name:'Piket Kelas'}],
+  archives:[]
 };

@@ -1,0 +1,3 @@
+import {NextResponse} from 'next/server';import{db}from '@/lib/db';
+export const runtime='nodejs';
+export async function GET(){try{const sql=db();const [cfg,methods]=await Promise.all([sql`SELECT price,admin_whatsapp,purchase_note FROM commerce_config WHERE id=1`,sql`SELECT id,type,label,account_number,account_name,instructions,qr_image_url FROM payment_methods WHERE active=true ORDER BY sort_order,label`]);return NextResponse.json({config:cfg[0]||{price:99000},paymentMethods:methods})}catch(e){console.error(e);return NextResponse.json({message:'Pembayaran belum dapat dimuat.'},{status:500})}}
