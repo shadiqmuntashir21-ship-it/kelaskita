@@ -27,3 +27,6 @@ Salin `.env.example` menjadi `.env.local`, lalu isi `DATABASE_URL`, `SESSION_SEC
 
 ## Database
 Skema induk ada di `database/schema.sql`. Penambahan V2 juga tersedia terpisah di `database/schema-v2.sql`.
+
+## Rilis
+V2 production siap dengan modul akademik, jadwal, laporan Excel/PDF, dan identitas visual final KelasKita.
