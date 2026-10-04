@@ -18,6 +18,11 @@ async function send(to:string,subject:string,html:string,attachments?:any[]){
   const j=await r.json().catch(()=>({}));if(!r.ok)return {sent:false,error:j.message||'Email belum berhasil dikirim'};return {sent:true,id:j.id};
 }
 
+export async function sendPaymentReceivedEmail(order:any){
+  return send(order.email,`Konfirmasi Pembayaran KelasKita · ${order.order_code}`,
+  `<div style="font-family:Arial,sans-serif;line-height:1.65;color:#182230;max-width:640px"><h2 style="color:#0F2D6B">Konfirmasi pembayaran telah kami terima</h2><p>Halo ${order.buyer_name}, klaim pembayaran untuk pesanan <b>${order.order_code}</b> sudah masuk dan sedang diperiksa.</p><p>Total: <b>${new Intl.NumberFormat('id-ID',{style:'currency',currency:'IDR',maximumFractionDigits:0}).format(Number(order.amount)||99000)}</b><br>Metode: <b>${order.payment_method_snapshot?.label||'-'}</b></p><p>Setelah pembayaran dikonfirmasi oleh admin, kode lisensi dan PIN KelasKita akan dikirim otomatis ke email ini.</p><p style="color:#667085;font-size:13px">Simpan Order ID sampai akses KelasKita diterima.</p></div>`);
+}
+
 export async function notifyOwnerPaymentClaim(order:any){
   const to=process.env.OWNER_NOTIFICATION_EMAIL;if(!to)return {sent:false,error:'OWNER_NOTIFICATION_EMAIL belum dikonfigurasi'};
   return send(to,`KelasKita · Pembayaran perlu diverifikasi · ${order.order_code}`,
