@@ -228,7 +228,7 @@ export function analyzeWorksheet(ws:any,kind:ImportKind){
 export async function analyzeWorkbook(buffer:ArrayBuffer|Buffer,kind:ImportKind){
   const wb=new ExcelJS.Workbook();
   const input=Buffer.isBuffer(buffer)?buffer:Buffer.from(buffer);
-  await wb.xlsx.load(input);
+  await wb.xlsx.load(input as any);
   const sheets=wb.worksheets.filter(w=>w.rowCount>0).map(w=>analyzeWorksheet(w,kind)).filter(s=>s.rows.length||s.headers.length);
   sheets.sort((a,b)=>b.qualityScore-a.qualityScore);
   return sheets;
