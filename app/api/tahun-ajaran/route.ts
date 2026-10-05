@@ -14,10 +14,12 @@ export async function POST(req:Request){
   const sql=db(),cls=await resolveClassContext(s.licenseId,b.class_id);
   if(!cls)return NextResponse.json({message:'Kelas aktif tidak ditemukan.'},{status:404});
   const classId=String(cls.id);
-  const [profile,students,attendance,notes,achievements,followUps,agendas,subjects,schedules,assessments,scores,reportNotes,officers,duties,admin]=await Promise.all([
+  const [profile,students,attendance,subjectAttendanceSessions,subjectAttendanceRecords,notes,achievements,followUps,agendas,subjects,schedules,assessments,scores,reportNotes,officers,duties,admin]=await Promise.all([
    sql`SELECT teacher_name,school_name FROM licenses WHERE id=${s.licenseId}`,
    sql`SELECT st.* FROM class_enrollments ce JOIN students st ON st.id=ce.student_id WHERE ce.license_id=${s.licenseId} AND ce.class_id=${classId} AND ce.status='Aktif'`,
    sql`SELECT ad.attendance_date,ar.* FROM attendance_days ad JOIN attendance_records ar ON ar.attendance_day_id=ad.id WHERE ad.license_id=${s.licenseId} AND ad.class_id=${classId}`,
+   sql`SELECT * FROM subject_attendance_sessions WHERE license_id=${s.licenseId} AND class_id=${classId}`,
+   sql`SELECT sar.* FROM subject_attendance_records sar JOIN subject_attendance_sessions sas ON sas.id=sar.session_id WHERE sas.license_id=${s.licenseId} AND sas.class_id=${classId}`,
    sql`SELECT * FROM student_notes WHERE license_id=${s.licenseId} AND class_id=${classId}`,
    sql`SELECT * FROM achievements WHERE license_id=${s.licenseId} AND class_id=${classId}`,
    sql`SELECT * FROM follow_ups WHERE license_id=${s.licenseId} AND class_id=${classId}`,
@@ -32,7 +34,7 @@ export async function POST(req:Request){
    sql`SELECT * FROM class_admin_items WHERE license_id=${s.licenseId} AND class_id=${classId}`
   ]);
   const p=profile[0]||{};
-  const snapshot={profile:{...p,class_name:cls.name,academic_year:cls.academic_year},students,attendance,notes,achievements,followUps,agendas,subjects,schedules,assessments,scores,reportNotes,officers,duties,admin};
+  const snapshot={profile:{...p,class_name:cls.name,academic_year:cls.academic_year},students,attendance,subjectAttendanceSessions,subjectAttendanceRecords,notes,achievements,followUps,agendas,subjects,schedules,assessments,scores,reportNotes,officers,duties,admin};
   await sql`INSERT INTO class_year_archives(license_id,academic_year,class_name,snapshot)
     VALUES(${s.licenseId},${cls.academic_year},${cls.name},${JSON.stringify(snapshot)}::jsonb)
     ON CONFLICT(license_id,academic_year,class_name) DO UPDATE SET snapshot=EXCLUDED.snapshot,closed_at=now()`;
