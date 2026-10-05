@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
 import {getClassSession as getSession} from '@/lib/class-session';
 import { db } from '@/lib/db';
-import { ensureV4Schema } from '@/lib/v4-schema';
+import {ensureV5Schema} from '@/lib/v5-schema';
+import {resolveClassContext} from '@/lib/v5-context';
 import {normalizeNisn,normalizeText,parseScore,suggestMappings} from '@/lib/excel-smart';
 
 function str(v:any){return String(v??'').trim().replace(/\.0$/,'')}
@@ -45,7 +46,7 @@ async function resolveSubject(sql:any,licenseId:string,body:any,commit:boolean){
 export async function POST(req:Request){
   const s=await getSession();if(!s)return NextResponse.json({message:'Sesi berakhir.'},{status:401});
   try{
-    await ensureV4Schema();
+    await ensureV5Schema();
     const body=await req.json();
     const cols=(body.assessments||[]).filter((x:any)=>x.include!==false&&x.column&&x.name);
     if(!body.semester||!Array.isArray(body.rows)||!body.rows.length||!cols.length)return NextResponse.json({message:'Semester dan minimal satu kolom nilai wajib dipilih.'},{status:400});
@@ -54,15 +55,17 @@ export async function POST(req:Request){
     if(!identity.name&&!identity.nis&&!identity.nisn)return NextResponse.json({message:'KelasKita belum menemukan identitas siswa. Pilih kolom Nama, NIS, atau NISN.'},{status:400});
 
     const sql=db(),isCommit=body.action==='commit';
+    const cls=await resolveClassContext(s.licenseId,body.class_id);
+    if(!cls)return NextResponse.json({message:'Kelas aktif belum dipilih.'},{status:400});
     const resolved=await resolveSubject(sql,s.licenseId,body,isCommit);
     if(!resolved.subject)return NextResponse.json({message:'Mata pelajaran tidak ditemukan.'},{status:404});
     const subjectId=resolved.subject.id as string|null,subjectName=String(resolved.subject.name);
 
-    const students=await sql`SELECT id,nis,nisn,name FROM students WHERE license_id=${s.licenseId} AND status<>'Dihapus'`;
+    const students=await sql`SELECT st.id,st.nis,st.nisn,st.name FROM class_enrollments ce JOIN students st ON st.id=ce.student_id WHERE ce.license_id=${s.licenseId} AND ce.class_id=${cls.id} AND ce.status='Aktif' AND st.status<>'Dihapus'`;
     const match=makeMatcher(students as any[]);
-    const assessments=subjectId?await sql`SELECT id,name,category,max_score,assessment_date FROM assessments WHERE license_id=${s.licenseId} AND subject_id=${subjectId} AND semester=${body.semester}`:[];
+    const assessments=subjectId?await sql`SELECT id,name,category,max_score,assessment_date FROM assessments WHERE license_id=${s.licenseId} AND class_id=${cls.id} AND subject_id=${subjectId} AND semester=${body.semester}`:[];
     const existingByName=new Map((assessments as any[]).map(a=>[norm(a.name),a]));
-    const scores=subjectId?await sql`SELECT ss.student_id,ss.score,ss.remedial_score,a.name assessment_name FROM student_scores ss JOIN assessments a ON a.id=ss.assessment_id WHERE ss.license_id=${s.licenseId} AND a.subject_id=${subjectId} AND a.semester=${body.semester}`:[];
+    const scores=subjectId?await sql`SELECT ss.student_id,ss.score,ss.remedial_score,a.name assessment_name FROM student_scores ss JOIN assessments a ON a.id=ss.assessment_id WHERE ss.license_id=${s.licenseId} AND a.class_id=${cls.id} AND a.subject_id=${subjectId} AND a.semester=${body.semester}`:[];
     const scoreMap=new Map<string,any>();(scores as any[]).forEach(sc=>scoreMap.set(`${norm(sc.assessment_name)}::${sc.student_id}`,sc));
 
     const matches:any[]=[],unmatched:any[]=[],ambiguous:any[]=[],nameReview:any[]=[],conflicts:any[]=[];let values=0;
@@ -85,13 +88,14 @@ export async function POST(req:Request){
     if(!isCommit)return NextResponse.json({stats,identity,unmatched:unmatched.slice(0,120),ambiguous:ambiguous.slice(0,120),nameReview:nameReview.slice(0,120),conflicts:conflicts.slice(0,350)});
 
     if(!subjectId)throw new Error('Mata pelajaran belum berhasil dibuat.');
+    await sql`INSERT INTO teaching_assignments(license_id,class_id,subject_id,is_active) VALUES(${s.licenseId},${cls.id},${subjectId},true) ON CONFLICT(license_id,class_id,subject_id) DO UPDATE SET is_active=true,updated_at=now()`;
     const allowName=body.acceptNameMatches!==false,overwrite=new Set<string>(Array.isArray(body.overwriteKeys)?body.overwriteKeys:[]);
     let imported=0,kept=0,createdAssessments=0;
     for(const col of cols){
       let assessment=existingByName.get(norm(col.name));
       if(!assessment){
-        const inserted=await sql`INSERT INTO assessments(license_id,subject_id,name,category,semester,assessment_date,max_score)
-        VALUES(${s.licenseId},${subjectId},${col.name},${col.category||'Tugas Harian'},${body.semester},${col.date||new Date().toISOString().slice(0,10)}::date,${Number(col.maxScore||100)}) RETURNING id,name`;
+        const inserted=await sql`INSERT INTO assessments(license_id,class_id,subject_id,name,category,semester,assessment_date,max_score)
+        VALUES(${s.licenseId},${cls.id},${subjectId},${col.name},${col.category||'Tugas Harian'},${body.semester},${col.date||new Date().toISOString().slice(0,10)}::date,${Number(col.maxScore||100)}) RETURNING id,name`;
         assessment=inserted[0];existingByName.set(norm(col.name),assessment);createdAssessments++;
       }
       const payload:any[]=[];
@@ -111,7 +115,7 @@ export async function POST(req:Request){
         imported+=payload.length;
       }
     }
-    const summary={subject_id:subjectId,subject_name:subjectName,semester:body.semester,rows:body.rows.length,imported,kept,createdAssessments,createdSubject:resolved.created,unmatched:unmatched.length,ambiguous:ambiguous.length,sourceName:body.sourceName||null};
+    const summary={subject_id:subjectId,subject_name:subjectName,class_id:cls.id,class_name:cls.name,semester:body.semester,rows:body.rows.length,imported,kept,createdAssessments,createdSubject:resolved.created,unmatched:unmatched.length,ambiguous:ambiguous.length,sourceName:body.sourceName||null};
     await sql`INSERT INTO import_batches(license_id,kind,source_name,summary) VALUES(${s.licenseId},'nilai',${body.sourceName||null},${JSON.stringify(summary)}::jsonb)`;
     return NextResponse.json({ok:true,...summary});
   }catch(e){
