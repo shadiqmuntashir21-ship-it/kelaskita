@@ -76,10 +76,14 @@ export function ensureV5Schema(){
       IF EXISTS(SELECT 1 FROM pg_constraint WHERE conname='class_officers_license_id_role_name_key') THEN
         ALTER TABLE class_officers DROP CONSTRAINT class_officers_license_id_role_name_key;
       END IF;
+      IF EXISTS(SELECT 1 FROM pg_constraint WHERE conname='duty_roster_license_id_student_id_day_name_key') THEN
+        ALTER TABLE duty_roster DROP CONSTRAINT duty_roster_license_id_student_id_day_name_key;
+      END IF;
     END $$`;
     await sql`CREATE UNIQUE INDEX IF NOT EXISTS uq_attendance_days_class_date ON attendance_days(license_id,class_id,attendance_date)`;
     await sql`CREATE UNIQUE INDEX IF NOT EXISTS uq_admin_items_class_key ON class_admin_items(license_id,class_id,item_key)`;
     await sql`CREATE UNIQUE INDEX IF NOT EXISTS uq_officers_class_role ON class_officers(license_id,class_id,role_name)`;
+    await sql`CREATE UNIQUE INDEX IF NOT EXISTS uq_duty_class_student_day ON duty_roster(license_id,class_id,student_id,day_name)`;
 
     // Setiap lisensi lama mendapat satu kelas kompatibilitas dari class_name yang sudah ada.
     await sql`INSERT INTO classes(license_id,name,academic_year,is_homeroom)
