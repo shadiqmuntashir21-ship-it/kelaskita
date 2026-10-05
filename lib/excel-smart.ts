@@ -15,7 +15,8 @@ const FIELD_PATTERNS:Record<string,RegExp[]>={
   guardian_phone:[/(no|nomor|hp|wa|telp|telepon).*(wali|orang tua|ortu)/, /(wali|orang tua|ortu).*(no|nomor|hp|wa|telp|telepon)/],
   phone:[/^(no|nomor|hp|wa|telp|telepon).*(siswa|murid)?$/, /^(hp|wa) siswa$/],
 };
-const SCORE_HINT=/(nilai|tugas|\bth\b|harian|\buh\b|ulangan|pts|uts|pas|uas|praktik|praktek|proyek|projek|kuis|quiz|asesmen|assessment|sumatif|formatif|portofolio)/i;
+const SCORE_HINT=/(nilai|tugas|\bth\b|harian|\buh\b|ulangan|pts|uts|pas|uas|praktik|praktek|proyek|projek|kuis|quiz|asesmen|assessment|sumatif|formatif|portofolio|januari|februari|maret|april|mei|juni|juli|agustus|september|oktober|november|desember)/i;
+const MONTH_HINT=/^(januari|februari|maret|april|mei|juni|juli|agustus|september|oktober|november|desember)$/i;
 const GENERIC_SHEET=/^(sheet\s*\d*|data|siswa|nilai|rekap|daftar)$/i;
 
 export function normalizeText(v:any){
@@ -155,7 +156,15 @@ function readRows(ws:any,headerRow:number,headers:string[]){
 function valuesFor(rows:any[],h:string){return rows.slice(0,120).map(r=>r[h]).filter(v=>String(v??'').trim()!=='')}
 function ratio(vals:any[],fn:(v:any)=>boolean){return vals.length?vals.filter(fn).length/vals.length:0}
 function looksName(v:any){const x=String(v??'').trim();return /^[A-Za-zÀ-ž.'’\- ]{4,}$/.test(x)&&x.split(/\s+/).length>=1&&!/^laki|^perempuan$/i.test(x)}
-function looksClass(v:any){const x=normalizeText(v).toUpperCase();return /^(X|XI|XII|10|11|12)(\s|[-.]|$)[A-Z0-9]/.test(x)||/^(X|XI|XII)\s*[A-Z]{2,}/.test(x)}
+export function looksClassName(v:any){
+  const raw=String(v??'').trim();
+  const x=normalizeText(raw).toUpperCase();
+  return /^(?:[1-9]|1[0-2])\s*[A-Z]{1,3}$/.test(x)
+    || /^(X|XI|XII|10|11|12)(\s|[-.]|$)[A-Z0-9]/.test(x)
+    || /^(X|XI|XII)\s*[A-Z]{2,}/.test(x)
+    || /^(?:KELAS\s*)?(?:[1-9]|1[0-2])\s*[-.]?\s*[A-Z]{1,3}$/.test(x);
+}
+function looksClass(v:any){return looksClassName(v)}
 function looksPhone(v:any){const x=String(v??'').replace(/\D/g,'');return x.length>=9&&x.length<=15&&(x.startsWith('08')||x.startsWith('62')||x.startsWith('8'))}
 function looksNisn(v:any){const x=String(v??'').replace(/\D/g,'');return x.length===10}
 function looksDate(v:any){return !!normalizeDate(v)}
@@ -206,24 +215,39 @@ export function categoryFor(header:string){
 function cleanHint(s:string){return s.replace(/\s+/g,' ').replace(/^[\s:;\-]+|[\s:;\-]+$/g,'').slice(0,80)}
 function metadata(ws:any,headerRow:number){
   const parts:string[]=[];
-  for(let r=1;r<headerRow;r++)for(let c=1;c<=Math.min(ws.columnCount||0,12);c++){const x=String(readCell(ws.getRow(r).getCell(c))??'').trim();if(x)parts.push(x)}
+  for(let r=1;r<headerRow;r++)for(let col=1;col<=Math.min(ws.columnCount||0,12);col++){const x=String(readCell(ws.getRow(r).getCell(col))??'').trim();if(x)parts.push(x)}
   const text=parts.join(' | ');
   const subjectMatch=text.match(/(?:mata pelajaran|mapel|pelajaran|subject)\s*[:\-]?\s*([^|]{2,60})/i);
   const classMatch=text.match(/(?:kelas|rombel)\s*[:\-]?\s*([^|]{1,40})/i);
   let subjectHint=subjectMatch?cleanHint(subjectMatch[1]):'';
   let classHint=classMatch?cleanHint(classMatch[1]):'';
-  if(!subjectHint&&!GENERIC_SHEET.test(ws.name)&&!/(siswa|peserta|kelas)/i.test(ws.name))subjectHint=cleanHint(ws.name.replace(/rekap|nilai|semester|ganjil|genap/gi,''));
-  return{subjectHint,classHint,metadataText:text.slice(0,500)};
+
+  if(!classHint&&looksClassName(ws.name))classHint=cleanHint(ws.name);
+  if(!classHint){
+    const candidates=parts.flatMap(p=>String(p).split(/\s+/)).filter(Boolean);
+    for(let i=0;i<candidates.length;i++){
+      const one=candidates[i];
+      const two=i+1<candidates.length?one+' '+candidates[i+1]:'';
+      if(looksClassName(two)){classHint=cleanHint(two);break}
+      if(looksClassName(one)){classHint=cleanHint(one);break}
+    }
+  }
+  if(!subjectHint&&!GENERIC_SHEET.test(ws.name)&&!looksClassName(ws.name)&&!/(siswa|peserta|kelas)/i.test(ws.name)){
+    const candidate=cleanHint(ws.name.replace(/rekap|nilai|semester|ganjil|genap/gi,''));
+    if(candidate&&!looksClassName(candidate))subjectHint=candidate;
+  }
+  return{subjectHint,classHint,metadataText:text.slice(0,500),isFormative:/formatif/i.test(text+' '+ws.name)};
 }
 export function analyzeWorksheet(ws:any,kind:ImportKind){
   const headerRow=detectHeaderRow(ws,kind),headers=buildHeaders(ws,headerRow),rows=readRows(ws,headerRow,headers);
-  const suggestions=suggestMappings(headers,rows),meta=metadata(ws,headerRow),scoreColumns=detectScoreColumns(headers,rows,suggestions);
+  const suggestions=suggestMappings(headers,rows),meta=metadata(ws,headerRow);
+  const scoreColumns=detectScoreColumns(headers,rows,suggestions).map((x:any)=>meta.isFormative&&MONTH_HINT.test(normalizeText(x.column))?{...x,name:'Formatif '+String(x.column).trim().replace(/^./,m=>m.toUpperCase())}:x);
   const classValues=suggestions.class_name?valuesFor(rows,suggestions.class_name).filter(looksClass).map(v=>String(v).trim()):[];
   const classFreq=new Map<string,number>();classValues.forEach(x=>classFreq.set(x,(classFreq.get(x)||0)+1));
-  const detectedClass=[...classFreq.entries()].sort((a,b)=>b[1]-a[1])[0]?.[0]||meta.classHint||'';
+  const detectedClass=[...classFreq.entries()].sort((a,b)=>b[1]-a[1])[0]?.[0]||meta.classHint||(looksClassName(ws.name)?ws.name:'');
   const nameRows=suggestions.name?valuesFor(rows,suggestions.name).filter(looksName).length:0;
   const qualityScore=nameRows*4+Object.values(suggestions).filter(Boolean).length*8+scoreColumns.length*(kind==='nilai'?8:1);
-  return{name:ws.name,headerRow,headers,rows,suggestions,scoreColumns,subjectHint:meta.subjectHint,classHint:detectedClass,qualityScore};
+  return{name:ws.name,headerRow,headers,rows,suggestions,scoreColumns,subjectHint:meta.subjectHint,classHint:detectedClass,isFormative:meta.isFormative,qualityScore};
 }
 export async function analyzeWorkbook(buffer:ArrayBuffer|Buffer,kind:ImportKind){
   const wb=new ExcelJS.Workbook();
