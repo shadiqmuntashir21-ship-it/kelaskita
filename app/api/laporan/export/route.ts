@@ -1,5 +1,5 @@
 import {NextResponse} from 'next/server';
-import {getSession} from '@/lib/auth';
+import {getClassSession as getSession} from '@/lib/class-session';
 import {db} from '@/lib/db';
 import ExcelJS from 'exceljs';
 import {PDFDocument,StandardFonts,rgb} from 'pdf-lib';
