@@ -14,7 +14,7 @@ export default function OnboardingWizard({
  const[subjectId,setSubjectId]=useState(subjects[0]?.id||'');
  const[subjectName,setSubjectName]=useState('');
  const[teachingText,setTeachingText]=useState(existingHomeroom?.name||profile?.class_name||'');
- const teachingClasses=useMemo(()=>[...new Set(teachingText.split(/[\n,;]+/).map(x=>x.trim()).filter(Boolean))],[teachingText]);
+ const teachingClasses=useMemo(()=>[...new Set(teachingText.split(/[\n,;]+/).map((x:string)=>x.trim()).filter(Boolean))],[teachingText]);
 
  function choose(r:Role){setRole(r);setError('');setStep(2)}
  async function finish(){
