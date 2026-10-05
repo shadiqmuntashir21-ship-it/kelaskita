@@ -73,3 +73,30 @@ CREATE UNIQUE INDEX IF NOT EXISTS uq_report_notes_class_student_term ON report_n
 
 -- Runtime migration also drops the legacy report_notes unique constraint on
 -- (license_id, student_id, academic_year, semester) before creating the V5 class-scoped index.
+
+
+-- V6 — Kehadiran Pertemuan Guru Mata Pelajaran
+CREATE TABLE IF NOT EXISTS subject_attendance_sessions(
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  license_id uuid NOT NULL REFERENCES licenses(id) ON DELETE CASCADE,
+  class_id uuid NOT NULL REFERENCES classes(id) ON DELETE CASCADE,
+  subject_id uuid NOT NULL REFERENCES subjects(id) ON DELETE CASCADE,
+  meeting_date date NOT NULL,
+  meeting_no integer NOT NULL DEFAULT 1,
+  note text,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now(),
+  UNIQUE(license_id,class_id,subject_id,meeting_date,meeting_no)
+);
+CREATE INDEX IF NOT EXISTS idx_subject_attendance_sessions ON subject_attendance_sessions(license_id,class_id,subject_id,meeting_date);
+
+CREATE TABLE IF NOT EXISTS subject_attendance_records(
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  session_id uuid NOT NULL REFERENCES subject_attendance_sessions(id) ON DELETE CASCADE,
+  student_id uuid NOT NULL REFERENCES students(id) ON DELETE CASCADE,
+  status varchar(30) NOT NULL DEFAULT 'Hadir',
+  note text,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now(),
+  UNIQUE(session_id,student_id)
+);
