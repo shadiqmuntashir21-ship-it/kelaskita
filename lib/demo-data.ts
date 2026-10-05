@@ -51,7 +51,7 @@ function scoreFor(studentIndex:number,subjectIndex:number,assessmentIndex:number
  const top=[1,3,7,16,23,27],attention=[0,2,8,13];
  let base=80+((studentIndex*7+subjectIndex*3)%8)-3;
  if(top.includes(studentIndex))base+=7;
- if(attention.includes(studentIndex))base-=studentIndex===0?8:6;
+ if(attention.includes(studentIndex))base-=studentIndex===0?12:studentIndex===8?9:7;
  if(subjectIndex===6&&[3,7,9,17,23].includes(studentIndex))base+=7;
  if(subjectIndex===0&&[0,2,8].includes(studentIndex))base-=4;
  const progression=semester==='Ganjil'?Math.floor(assessmentIndex/3):0;
@@ -64,7 +64,7 @@ assessments.forEach((a,ai)=>{
  demoStudents.forEach((st,sti)=>{
    const score=scoreFor(sti,si,localIndex,a.semester);
    const mastery=subjects[si].mastery_score;
-   scores.push({id:`sc-${a.id}-${st.id}`,assessment_id:a.id,student_id:st.id,score,remedial_score:score<mastery?clamp(score+9,mastery,88):null,note:score<mastery?'Perlu penguatan materi':''});
+   const unresolved=[0,8,13].includes(sti)&&localIndex%3===0;scores.push({id:`sc-${a.id}-${st.id}`,assessment_id:a.id,student_id:st.id,score,remedial_score:score<mastery&&!unresolved?clamp(score+9,mastery,88):null,note:score<mastery?(unresolved?'Belum mengikuti remedial':'Sudah mengikuti remedial'):''});
  });
 });
 
