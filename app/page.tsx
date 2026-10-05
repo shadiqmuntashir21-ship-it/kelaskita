@@ -7,8 +7,8 @@ const features=[
   [BookOpen,'Akademik lengkap','Mata pelajaran, tugas harian, UH, PTS, PAS, remedial, batas ketuntasan, dan rekap siswa.'],
   [UsersRound,'Siswa 360°','Kehadiran, akademik, catatan, prestasi, tindak lanjut, dan identitas siswa dalam satu profil.'],
   [FileText,'Administrasi kelas','Catatan rapor, struktur kelas, jadwal piket, kelengkapan administrasi, surat, dan arsip tahun ajaran.'],
-  [FileSpreadsheet,'Laporan siap pakai','Rekap Excel dan PDF disusun agar wali kelas tidak perlu merapikan ulang data yang sama.'],
-  [ShieldCheck,'Ruang data terpisah','Setiap pelanggan masuk dengan kode lisensi dan PIN untuk ruang kerja kelasnya sendiri.']
+  [FileSpreadsheet,'Laporan siap pakai','Rekap Excel dan PDF disusun agar guru tidak perlu merapikan ulang data yang sama.'],
+  [ShieldCheck,'Satu lisensi, ruang kerja terpisah','Satu guru dapat mengelola beberapa kelas dan mata pelajaran dengan data tiap kelas tetap terpisah.']
 ] as const;
 
 export default function Landing(){return <main className="landing landing-v4">
@@ -23,16 +23,16 @@ export default function Landing(){return <main className="landing landing-v4">
 
   <section className="kk-container lp-hero">
     <div className="lp-hero-copy">
-      <span className="lp-kicker"><Sparkles size={14}/> Ruang kerja digital khusus wali kelas</span>
-      <h1>Satu tempat untuk mengelola kelas dengan <span>lebih tenang.</span></h1>
-      <p>KelasKita merapikan siswa, kehadiran, nilai, jadwal, catatan, administrasi, dan laporan supaya wali kelas tidak lagi berpindah-pindah antara buku, Excel, chat, dan file terpisah.</p>
+      <span className="lp-kicker"><Sparkles size={14}/> Ruang kerja digital untuk guru</span>
+      <h1>Satu tempat untuk mengelola kelas dan pembelajaran dengan <span>lebih tenang.</span></h1>
+      <p>KelasKita membantu wali kelas dan guru mata pelajaran mengelola siswa, kehadiran, nilai, remedial, catatan, administrasi, dan laporan dalam satu ruang kerja.</p>
       <div className="lp-actions">
         <Link className="btn btn-primary lp-primary" href="/beli">Beli KelasKita Rp99.000 <ArrowRight size={18}/></Link>
         <Link className="btn btn-ghost" href="/demo">Coba Demo 12 Bulan</Link>
       </div>
       <div className="lp-trust">
         <span><CheckCircle2 size={15}/> Sekali bayar</span>
-        <span><CheckCircle2 size={15}/> Lisensi + PIN</span>
+        <span><CheckCircle2 size={15}/> 1 lisensi = 1 guru</span>
         <span><CheckCircle2 size={15}/> Excel & PDF</span>
         <span><CheckCircle2 size={15}/> PWA siap dipasang</span>
       </div>
@@ -72,13 +72,22 @@ export default function Landing(){return <main className="landing landing-v4">
   <section className="kk-container lp-proof">
     <div><b>30</b><span>siswa dalam demo</span></div>
     <div><b>12 bulan</b><span>riwayat contoh</span></div>
-    <div><b>9</b><span>mata pelajaran</span></div>
+    <div><b>Multi-kelas</b><span>untuk satu guru</span></div>
     <div><b>160+</b><span>penilaian tersimpan</span></div>
     <div><b>20+</b><span>jenis laporan & rekap</span></div>
   </section>
 
+  <section className="kk-container lp-section lp-role-section">
+    <div className="lp-section-head"><span className="lp-kicker">SATU APLIKASI, DUA CARA KERJA</span><h2>KelasKita mengikuti peran guru.</h2><p>Tidak semua guru bekerja dengan alur yang sama. Karena itu menu dan ruang kerja menyesuaikan peran yang dipilih.</p></div>
+    <div className="lp-role-grid">
+      <article className="lp-role-card"><span><UsersRound size={23}/></span><div><small>UNTUK WALI KELAS</small><h3>Kelola satu kelas secara menyeluruh.</h3><p>Siswa, kehadiran, akademik, catatan, prestasi, tindak lanjut, administrasi kelas, catatan rapor, dan laporan.</p></div></article>
+      <article className="lp-role-card"><span><BookOpen size={23}/></span><div><small>UNTUK GURU MATA PELAJARAN</small><h3>Kelola satu mapel di beberapa kelas.</h3><p>Buat penilaian, impor nilai Excel lintas kelas, pantau ketuntasan dan remedial, lalu bandingkan progres setiap kelas.</p></div></article>
+    </div>
+    <div className="lp-role-note"><CheckCircle2 size={17}/><span>Guru yang menjadi wali kelas sekaligus mengajar mata pelajaran dapat menggunakan <b>keduanya dalam satu akun.</b></span></div>
+  </section>
+
   <section className="kk-container lp-section">
-    <div className="lp-section-head"><span className="lp-kicker">DIBUAT UNTUK PEKERJAAN NYATA</span><h2>Bukan sekadar dashboard. Ini ruang kerja wali kelas.</h2><p>Setiap bagian KelasKita dibuat untuk membantu pekerjaan yang memang berulang sepanjang tahun ajaran.</p></div>
+    <div className="lp-section-head"><span className="lp-kicker">DIBUAT UNTUK PEKERJAAN NYATA</span><h2>Bukan sekadar dashboard. Ini ruang kerja guru.</h2><p>Gunakan sebagai wali kelas, guru mata pelajaran, atau keduanya dalam satu lisensi.</p></div>
     <div className="lp-feature-grid">{features.map(([I,t,d])=><article className="lp-feature" key={t}><span><I size={21}/></span><h3>{t}</h3><p>{d}</p></article>)}</div>
   </section>
 
@@ -108,7 +117,7 @@ export default function Landing(){return <main className="landing landing-v4">
 
   <section className="kk-container lp-price-wrap">
     <div className="lp-price-card">
-      <div><span className="lp-kicker light">KELASKITA</span><h2>Ruang kerja wali kelas lengkap.</h2><p>Coba seluruh alurnya melalui Mode Demo sebelum membeli.</p></div>
+      <div><span className="lp-kicker light">KELASKITA</span><h2>Satu lisensi untuk ruang kerja guru yang lebih rapi.</h2><p>Kelola kelas sebagai wali kelas, guru mata pelajaran, atau keduanya. Coba alurnya melalui Mode Demo sebelum membeli.</p></div>
       <div className="lp-price-side"><small>Lisensi KelasKita</small><b>Rp99.000</b><span>sekali bayar</span><Link className="btn lp-white-btn" href="/beli">Beli Sekarang <ArrowRight size={17}/></Link></div>
     </div>
   </section>
