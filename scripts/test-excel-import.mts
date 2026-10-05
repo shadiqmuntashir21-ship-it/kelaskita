@@ -77,4 +77,18 @@ async function bytes(wb){
   assert.ok(cols.some(x=>/^PAS$/i.test(x)),JSON.stringify(cols));
 }
 
-console.log('Smart Excel Reader: 4 skenario lulus.');
+
+// 5. Upload browser: ArrayBuffer dari File.arrayBuffer() harus tetap terbaca
+{
+  const wb=new ExcelJS.Workbook(),ws=wb.addWorksheet('Siswa');
+  ws.addRow(['Nama Siswa','JK','Kelas']);
+  ws.addRow(['Alya Maulida','P','XI DKV 1']);
+  const buf=await bytes(wb);
+  const ab=buf.buffer.slice(buf.byteOffset,buf.byteOffset+buf.byteLength);
+  const [s]=await analyzeWorkbook(ab,'siswa');
+  assert.equal(s.suggestions.name,'Nama Siswa');
+  assert.equal(s.suggestions.gender,'JK');
+  assert.equal(s.classHint,'XI DKV 1');
+}
+
+console.log('Smart Excel Reader: 5 skenario lulus termasuk browser ArrayBuffer.');
