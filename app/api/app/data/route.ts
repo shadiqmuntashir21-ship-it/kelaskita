@@ -30,9 +30,26 @@ export async function GET(req:Request){
   const requestedClass=url.searchParams.get('class_id');
   const sql=db();
   const activeClass=await resolveClassContext(s.licenseId,requestedClass);
-  if(!activeClass)return NextResponse.json({message:'Belum ada kelas aktif. Selesaikan pengaturan awal KelasKita.'},{status:409});
-  const classId=String(activeClass.id);
   const workspace=await listWorkspaceContext(s.licenseId);
+  if(!activeClass){
+    const [profile,subjects,settings,archives]=await Promise.all([
+      sql`SELECT id,code,teacher_name,school_name,class_name,academic_year,expires_at,onboarding_completed,max_devices,usage_mode,v5_onboarding_completed FROM licenses WHERE id=${s.licenseId}`,
+      sql`SELECT id,name,teacher_name,mastery_score,is_active,updated_at FROM subjects WHERE license_id=${s.licenseId} AND is_active=true ORDER BY name`,
+      sql`SELECT active_semester,calculation_mode,daily_weight,quiz_weight,semester_weight FROM academic_settings WHERE license_id=${s.licenseId}`,
+      sql`SELECT id,academic_year,class_name,closed_at FROM class_year_archives WHERE license_id=${s.licenseId} ORDER BY closed_at DESC`
+    ]);
+    const p:any=profile[0]||{};
+    return NextResponse.json({
+      profile:{...p,active_class_id:null,is_homeroom:false},
+      classes:workspace.classes,
+      teachingAssignments:workspace.assignments,
+      students:[],attendance:[],attendanceSummary:[],notes:[],achievements:[],followUps:[],agendas:[],
+      subjects,schedules:[],assessments:[],scores:[],
+      academicSettings:settings[0]||{active_semester:'Ganjil',calculation_mode:'Otomatis',daily_weight:30,quiz_weight:30,semester_weight:40},
+      reportNotes:[],adminItems:[],officers:[],duties:[],archives
+    });
+  }
+  const classId=String(activeClass.id);
 
   for(const [key,label,category,sort] of defaults){
    await sql`INSERT INTO class_admin_items(license_id,class_id,item_key,label,category,sort_order)
