@@ -79,11 +79,15 @@ export function ensureV5Schema(){
       IF EXISTS(SELECT 1 FROM pg_constraint WHERE conname='duty_roster_license_id_student_id_day_name_key') THEN
         ALTER TABLE duty_roster DROP CONSTRAINT duty_roster_license_id_student_id_day_name_key;
       END IF;
+      IF EXISTS(SELECT 1 FROM pg_constraint WHERE conname='report_notes_license_id_student_id_academic_year_semester_key') THEN
+        ALTER TABLE report_notes DROP CONSTRAINT report_notes_license_id_student_id_academic_year_semester_key;
+      END IF;
     END $$`;
     await sql`CREATE UNIQUE INDEX IF NOT EXISTS uq_attendance_days_class_date ON attendance_days(license_id,class_id,attendance_date)`;
     await sql`CREATE UNIQUE INDEX IF NOT EXISTS uq_admin_items_class_key ON class_admin_items(license_id,class_id,item_key)`;
     await sql`CREATE UNIQUE INDEX IF NOT EXISTS uq_officers_class_role ON class_officers(license_id,class_id,role_name)`;
     await sql`CREATE UNIQUE INDEX IF NOT EXISTS uq_duty_class_student_day ON duty_roster(license_id,class_id,student_id,day_name)`;
+    await sql`CREATE UNIQUE INDEX IF NOT EXISTS uq_report_notes_class_student_term ON report_notes(license_id,class_id,student_id,academic_year,semester)`;
 
     // Setiap lisensi lama mendapat satu kelas kompatibilitas dari class_name yang sudah ada.
     await sql`INSERT INTO classes(license_id,name,academic_year,is_homeroom)
