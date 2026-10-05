@@ -35,6 +35,7 @@ export default function ImportDataWizard({kind,data,onClose,onDone}:{kind:Kind;d
  const[applyDetectedClass,setApplyDetectedClass]=useState(true),[multiMode,setMultiMode]=useState(false),[classNames,setClassNames]=useState<Record<string,string>>({});
  const sheet=book?.sheets?.[sheetIndex],headers=sheet?.headers||[],rows=sheet?.rows||[];
  const selectedAssessments=useMemo(()=>assessments.filter((x:any)=>x.include),[assessments]);
+ const subjectCatalog=data.subjectCatalog||subjectCatalog;
  const multiSheets=useMemo(()=>kind==='nilai'?(book?.sheets||[]).filter((s:any)=>s.classHint&&s.suggestions?.name&&(s.scoreColumns||[]).length):[],[book,kind]);
 
  function initSheet(s:any){
@@ -49,10 +50,10 @@ export default function ImportDataWizard({kind,data,onClose,onDone}:{kind:Kind;d
     name:suggestions.name||fallbackGuess(s.headers||[],'name')
    });
    setAssessments(withDates(s.scoreColumns||[]));
-   const hit=closestSubject(data.subjects||[],s.subjectHint||'');
+   const hit=closestSubject(subjectCatalog,s.subjectHint||'');
    if(hit){setSubject(hit.id);setNewSubject('')}
    else if(s.subjectHint){setSubject('__new__');setNewSubject(s.subjectHint)}
-   else if((data.subjects||[]).length===1){setSubject(data.subjects[0].id);setNewSubject('')}
+   else if((subjectCatalog).length===1){setSubject(data.subjects[0].id);setNewSubject('')}
    else{setSubject('');setNewSubject('')}
   }
  }
@@ -62,9 +63,9 @@ export default function ImportDataWizard({kind,data,onClose,onDone}:{kind:Kind;d
   const hints=[...new Set(eligible.map((s:any)=>String(s.subjectHint||'').trim()).filter(Boolean).map((x:string)=>norm(x)))];
   if(hints.length===1){
    const original=eligible.find((s:any)=>norm(s.subjectHint)===hints[0])?.subjectHint||'';
-   const hit=closestSubject(data.subjects||[],original);
+   const hit=closestSubject(subjectCatalog,original);
    if(hit){setSubject(hit.id);setNewSubject('')}else{setSubject('__new__');setNewSubject(original)}
-  }else if((data.subjects||[]).length===1){setSubject(data.subjects[0].id);setNewSubject('')}
+  }else if((subjectCatalog).length===1){setSubject(data.subjects[0].id);setNewSubject('')}
   else{setSubject('');setNewSubject('')}
  }
 
@@ -158,7 +159,7 @@ export default function ImportDataWizard({kind,data,onClose,onDone}:{kind:Kind;d
      <span className="badge badge-info">Multi-kelas</span>
     </div>
     <div className="import-settings">
-     <label className="field"><span>Mata Pelajaran *</span><select className="input" value={subject} onChange={e=>setSubject(e.target.value)}><option value="">Pilih mapel</option>{(data.subjects||[]).map((s:any)=><option key={s.id} value={s.id}>{s.name}</option>)}<option value="__new__">+ Buat mata pelajaran baru</option></select></label>
+     <label className="field"><span>Mata Pelajaran *</span><select className="input" value={subject} onChange={e=>setSubject(e.target.value)}><option value="">Pilih mapel</option>{(subjectCatalog).map((s:any)=><option key={s.id} value={s.id}>{s.name}</option>)}<option value="__new__">+ Buat mata pelajaran baru</option></select></label>
      <label className="field"><span>Semester *</span><select className="input" value={semester} onChange={e=>setSemester(e.target.value)}><option>Ganjil</option><option>Genap</option></select></label>
     </div>
     {subject==='__new__'&&<label className="field"><span>Nama Mata Pelajaran Baru</span><input className="input" value={newSubject} onChange={e=>setNewSubject(e.target.value)} placeholder="Contoh: Matematika"/></label>}
@@ -171,7 +172,7 @@ export default function ImportDataWizard({kind,data,onClose,onDone}:{kind:Kind;d
      <div className="mapping-grid">{studentFields.map(([k,label])=><label className="field" key={k}><span>{label}{k==='name'?' *':''}</span><select className="input" value={mapping[k]||''} onChange={e=>setMapping((m:any)=>({...m,[k]:e.target.value}))}><option value="">Tidak ditemukan / tidak dipakai</option>{headers.map((h:string)=><option key={h}>{h}</option>)}</select></label>)}</div>
     </>:<>
      {sheet.subjectHint&&<div className="detected-strip"><span>Petunjuk mata pelajaran</span><b>{sheet.subjectHint}</b></div>}
-     <div className="import-settings"><label className="field"><span>Mata Pelajaran *</span><select className="input" value={subject} onChange={e=>setSubject(e.target.value)}><option value="">Pilih mapel</option>{(data.subjects||[]).map((s:any)=><option key={s.id} value={s.id}>{s.name}</option>)}<option value="__new__">+ Buat mata pelajaran baru</option></select></label><label className="field"><span>Semester *</span><select className="input" value={semester} onChange={e=>setSemester(e.target.value)}><option>Ganjil</option><option>Genap</option></select></label></div>
+     <div className="import-settings"><label className="field"><span>Mata Pelajaran *</span><select className="input" value={subject} onChange={e=>setSubject(e.target.value)}><option value="">Pilih mapel</option>{(subjectCatalog).map((s:any)=><option key={s.id} value={s.id}>{s.name}</option>)}<option value="__new__">+ Buat mata pelajaran baru</option></select></label><label className="field"><span>Semester *</span><select className="input" value={semester} onChange={e=>setSemester(e.target.value)}><option>Ganjil</option><option>Genap</option></select></label></div>
      {subject==='__new__'&&<label className="field"><span>Nama Mata Pelajaran Baru</span><input className="input" value={newSubject} onChange={e=>setNewSubject(e.target.value)}/></label>}
      <div className="mapping-grid identity-map">{[['nisn','NISN'],['nis','NIS'],['name','Nama Siswa']].map(([k,l])=><label className="field" key={k}><span>{l}</span><select className="input" value={mapping[k]||''} onChange={e=>setMapping((m:any)=>({...m,[k]:e.target.value}))}><option value="">Tidak ditemukan / tidak dipakai</option>{headers.map((h:string)=><option key={h}>{h}</option>)}</select></label>)}</div>
      <div className="assessment-map"><div className="card-head"><div><h3>Nilai yang terdeteksi</h3><p className="subtle">Kolom nilai dapat diaktifkan, diberi nama, dan dikategorikan sebelum impor.</p></div><span className="badge badge-info">{selectedAssessments.length} dipilih</span></div>{assessments.map((a:any,i:number)=><div className="assessment-map-row" key={a.column}><input type="checkbox" checked={a.include} onChange={e=>setAssessments(v=>v.map((x:any,j:number)=>j===i?{...x,include:e.target.checked}:x))}/><div><small>Kolom Excel</small><b>{a.column}</b></div><input className="input" value={a.name} onChange={e=>setAssessments(v=>v.map((x:any,j:number)=>j===i?{...x,name:e.target.value}:x))}/><select className="input" value={a.category} onChange={e=>setAssessments(v=>v.map((x:any,j:number)=>j===i?{...x,category:e.target.value}:x))}>{categories.map(c=><option key={c}>{c}</option>)}</select><input className="input" type="date" value={a.date} onChange={e=>setAssessments(v=>v.map((x:any,j:number)=>j===i?{...x,date:e.target.value}:x))}/><input className="input" type="number" min="1" value={a.maxScore} onChange={e=>setAssessments(v=>v.map((x:any,j:number)=>j===i?{...x,maxScore:Number(e.target.value)}:x))}/></div>)}</div>
