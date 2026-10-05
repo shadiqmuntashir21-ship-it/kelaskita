@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { verifyPin } from '@/lib/pin';
 import { setSession } from '@/lib/auth';
-import { ensureV4Schema } from '@/lib/v4-schema';
+import {ensureV5Schema} from '@/lib/v5-schema';
 import { cookies } from 'next/headers';
 import { randomUUID } from 'crypto';
 export const runtime='nodejs';
@@ -13,6 +13,7 @@ export async function POST(req:Request){
   try{
     const {code,pin}=await req.json();
     if(!code||!pin)return NextResponse.json({message:'Kode lisensi dan PIN wajib diisi.'},{status:400});
+    await ensureV5Schema();
     const sql=db();
     const rows=await sql`SELECT id,code,pin_hash,is_active,expires_at FROM licenses WHERE code=${String(code).trim().toUpperCase()} LIMIT 1`;
     const lic=rows[0] as any;
@@ -20,7 +21,6 @@ export async function POST(req:Request){
     if(!lic.is_active)return NextResponse.json({message:'Lisensi ini sedang tidak aktif. Hubungi KelasKita.'},{status:403});
     if(lic.expires_at&&new Date(lic.expires_at).getTime()<Date.now())return NextResponse.json({message:'Masa aktif lisensi telah berakhir.'},{status:403});
 
-    await ensureV4Schema();
     const cookieStore=await cookies();
     let key=cookieStore.get('kk_device_id')?.value||'';
     if(!key){key=randomUUID();cookieStore.set('kk_device_id',key,{httpOnly:true,secure:process.env.NODE_ENV==='production',sameSite:'lax',path:'/',maxAge:60*60*24*365})}
