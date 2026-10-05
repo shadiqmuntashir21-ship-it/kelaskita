@@ -6,7 +6,7 @@ export async function resolveClassContext(licenseId:string,requested?:string|nul
   const sql=db();
   if(requested){
     const rows=await sql`SELECT id,name,academic_year,is_homeroom FROM classes WHERE id=${requested} AND license_id=${licenseId} AND is_active=true LIMIT 1`;
-    if(rows[0])return rows[0];
+    return rows[0]||null;
   }
   const rows=await sql`SELECT id,name,academic_year,is_homeroom FROM classes WHERE license_id=${licenseId} AND is_active=true ORDER BY is_homeroom DESC,updated_at DESC,created_at LIMIT 1`;
   return rows[0]||null;
