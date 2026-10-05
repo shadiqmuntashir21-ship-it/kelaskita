@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
 import {getClassSession as getSession} from '@/lib/class-session';
 import { db } from '@/lib/db';
-import { ensureV4Schema } from '@/lib/v4-schema';
+import {ensureV5Schema} from '@/lib/v5-schema';
+import {resolveClassContext} from '@/lib/v5-context';
 import {normalizeDate,normalizeGender,normalizeNisn,normalizePhone,normalizeText,suggestMappings} from '@/lib/excel-smart';
 
 const fields=['nis','nisn','name','gender','class_name','birth_place','birth_date','address','guardian_name','guardian_phone','phone'] as const;
@@ -52,13 +53,15 @@ export async function POST(req:Request){
   const s=await getSession();
   if(!s)return NextResponse.json({message:'Sesi berakhir.'},{status:401});
   try{
-    await ensureV4Schema();
+    await ensureV5Schema();
     const body=await req.json();
     if(!Array.isArray(body.rows)||!body.rows.length)return NextResponse.json({message:'Tidak ada baris Excel yang dapat diproses.'},{status:400});
     const mapping=resolveMapping(body.rows,body.mapping||{});
     if(!mapping.name)return NextResponse.json({message:'KelasKita belum menemukan kolom nama siswa. Pilih kolom nama pada langkah pemetaan.'},{status:400});
     const sql=db();
-    const existing=await sql`SELECT id,nis,nisn,name,gender,birth_place,birth_date,address,guardian_name,guardian_phone,phone,status FROM students WHERE license_id=${s.licenseId} AND status<>'Dihapus'`;
+    const cls=await resolveClassContext(s.licenseId,body.class_id);
+    if(!cls)return NextResponse.json({message:'Kelas aktif belum dipilih.'},{status:400});
+    const existing=await sql`SELECT st.id,st.nis,st.nisn,st.name,st.gender,st.birth_place,st.birth_date,st.address,st.guardian_name,st.guardian_phone,st.phone,st.status FROM class_enrollments ce JOIN students st ON st.id=ce.student_id WHERE ce.license_id=${s.licenseId} AND ce.class_id=${cls.id} AND ce.status='Aktif' AND st.status<>'Dihapus'`;
     const match=makeMatcher(existing as any[]);
     const parsed=body.rows.map((row:any,index:number)=>({index,data:parseRow(row,mapping)})).filter((x:any)=>x.data.name&&x.data.name.length>=2);
     const detectedClass=mostCommonClass(parsed);
@@ -81,6 +84,7 @@ export async function POST(req:Request){
       if(m.kind==='ambiguous'){skipped++;continue}
       if(m.kind==='name'&&!body.acceptNameMatches){skipped++;continue}
       if(m.student){
+        await sql`INSERT INTO class_enrollments(license_id,class_id,student_id,status) VALUES(${s.licenseId},${cls.id},${m.student.id},'Aktif') ON CONFLICT(class_id,student_id) DO UPDATE SET status='Aktif',left_at=NULL,updated_at=now()`;
         if(body.strategy==='skip'){skipped++;continue}
         await sql`UPDATE students SET
           nis=COALESCE(NULLIF(${x.nis},''),nis),nisn=COALESCE(NULLIF(${x.nisn},''),nisn),name=COALESCE(NULLIF(${x.name},''),name),
@@ -92,8 +96,9 @@ export async function POST(req:Request){
         updated++;
       }else{
         try{
-          await sql`INSERT INTO students(license_id,nis,nisn,name,gender,birth_place,birth_date,address,guardian_name,guardian_phone,phone)
-          VALUES(${s.licenseId},${x.nis||null},${x.nisn||null},${x.name},${x.gender||null},${x.birth_place||null},${x.birth_date||null}::date,${x.address||null},${x.guardian_name||null},${x.guardian_phone||null},${x.phone||null})`;
+          const made=await sql`INSERT INTO students(license_id,nis,nisn,name,gender,birth_place,birth_date,address,guardian_name,guardian_phone,phone)
+          VALUES(${s.licenseId},${x.nis||null},${x.nisn||null},${x.name},${x.gender||null},${x.birth_place||null},${x.birth_date||null}::date,${x.address||null},${x.guardian_name||null},${x.guardian_phone||null},${x.phone||null}) RETURNING id`;
+          await sql`INSERT INTO class_enrollments(license_id,class_id,student_id,status) VALUES(${s.licenseId},${cls.id},${made[0].id},'Aktif') ON CONFLICT(class_id,student_id) DO UPDATE SET status='Aktif',left_at=NULL,updated_at=now()`;
           inserted++;
         }catch(e:any){
           const msg=String(e?.message||'').toLowerCase();
@@ -101,8 +106,8 @@ export async function POST(req:Request){
         }
       }
     }
-    if(detectedClass&&body.applyDetectedClass!==false)await sql`UPDATE licenses SET class_name=${detectedClass},updated_at=now() WHERE id=${s.licenseId}`;
-    const summary={total:parsed.length,inserted,updated,skipped,detectedClass:body.applyDetectedClass===false?'':detectedClass,sourceName:body.sourceName||null};
+    // Pada V5 nama kelas tidak lagi menimpa lisensi. Kelas aktif tetap ditentukan oleh workspace.
+    const summary={total:parsed.length,inserted,updated,skipped,detectedClass:body.applyDetectedClass===false?'':(detectedClass||cls.name),class_id:cls.id,sourceName:body.sourceName||null};
     await sql`INSERT INTO import_batches(license_id,kind,source_name,summary) VALUES(${s.licenseId},'siswa',${body.sourceName||null},${JSON.stringify(summary)}::jsonb)`;
     return NextResponse.json({ok:true,...summary});
   }catch(e){
