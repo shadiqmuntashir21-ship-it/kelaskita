@@ -66,10 +66,14 @@ export async function GET(req:Request){
   }
   const classId=String(activeClass.id);
 
-  for(const [key,label,category,sort] of defaults){
-   await sql`INSERT INTO class_admin_items(license_id,class_id,item_key,label,category,sort_order)
-     VALUES(${s.licenseId},${classId},${key},${label},${category},${sort})
-     ON CONFLICT(license_id,class_id,item_key) DO NOTHING`;
+  const modeRows=await sql`SELECT usage_mode FROM licenses WHERE id=${s.licenseId} LIMIT 1`;
+  const effectiveMode=String(modeRows[0]?.usage_mode||'wali');
+  if(!(effectiveMode==='mapel'&&!activeClass.is_homeroom)){
+   for(const [key,label,category,sort] of defaults){
+    await sql`INSERT INTO class_admin_items(license_id,class_id,item_key,label,category,sort_order)
+      VALUES(${s.licenseId},${classId},${key},${label},${category},${sort})
+      ON CONFLICT(license_id,class_id,item_key) DO NOTHING`;
+   }
   }
 
   const [profile,students,attendance,attendanceSummary,notes,achievements,followUps,agendas,subjects,subjectCatalog,schedules,assessments,scores,settings,reportNotes,adminItems,officers,duties,archives]=await Promise.all([
