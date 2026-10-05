@@ -1,12 +1,12 @@
 import {cookies} from 'next/headers';
 import {getSession} from '@/lib/auth';
 import {db} from '@/lib/db';
-import {ensureV4Schema} from '@/lib/v4-schema';
+import {ensureV5Schema} from '@/lib/v5-schema';
 
 export async function getClassSession(){
   const s=await getSession();
   if(!s)return null;
-  await ensureV4Schema();
+  await ensureV5Schema();
   const key=(await cookies()).get('kk_device_id')?.value||'';
   if(!key)return s; // sesi lama tetap diberi masa transisi sampai login berikutnya
   const sql=db();
