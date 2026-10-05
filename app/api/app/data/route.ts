@@ -44,7 +44,7 @@ export async function GET(req:Request){
       classes:workspace.classes,
       teachingAssignments:workspace.assignments,
       students:[],attendance:[],attendanceSummary:[],notes:[],achievements:[],followUps:[],agendas:[],
-      subjects,schedules:[],assessments:[],scores:[],
+      subjects,subjectCatalog:subjects,schedules:[],assessments:[],scores:[],
       academicSettings:settings[0]||{active_semester:'Ganjil',calculation_mode:'Otomatis',daily_weight:30,quiz_weight:30,semester_weight:40},
       reportNotes:[],adminItems:[],officers:[],duties:[],archives
     });
@@ -57,7 +57,7 @@ export async function GET(req:Request){
      ON CONFLICT(license_id,class_id,item_key) DO NOTHING`;
   }
 
-  const [profile,students,attendance,attendanceSummary,notes,achievements,followUps,agendas,subjects,schedules,assessments,scores,settings,reportNotes,adminItems,officers,duties,archives]=await Promise.all([
+  const [profile,students,attendance,attendanceSummary,notes,achievements,followUps,agendas,subjects,subjectCatalog,schedules,assessments,scores,settings,reportNotes,adminItems,officers,duties,archives]=await Promise.all([
    sql`SELECT id,code,teacher_name,school_name,class_name,academic_year,expires_at,onboarding_completed,max_devices,usage_mode,v5_onboarding_completed
        FROM licenses WHERE id=${s.licenseId}`,
    sql`SELECT st.id,st.nis,st.nisn,st.name,st.gender,st.birth_place,st.birth_date,st.phone,st.address,st.guardian_name,st.guardian_phone,st.status,st.updated_at
@@ -97,7 +97,11 @@ export async function GET(req:Request){
        ORDER BY agenda_date,agenda_time NULLS LAST LIMIT 200`,
    sql`SELECT su.id,su.name,su.teacher_name,su.mastery_score,su.is_active,su.updated_at,
        EXISTS(SELECT 1 FROM teaching_assignments ta WHERE ta.license_id=${s.licenseId} AND ta.class_id=${classId} AND ta.subject_id=su.id AND ta.is_active=true) assigned_to_active_class
-       FROM subjects su WHERE su.license_id=${s.licenseId} AND su.is_active=true ORDER BY su.name`,
+       FROM subjects su
+       WHERE su.license_id=${s.licenseId} AND su.is_active=true
+         AND (${!!activeClass.is_homeroom} OR EXISTS(SELECT 1 FROM teaching_assignments ta WHERE ta.license_id=${s.licenseId} AND ta.class_id=${classId} AND ta.subject_id=su.id AND ta.is_active=true))
+       ORDER BY su.name`,
+   sql`SELECT id,name,teacher_name,mastery_score,is_active,updated_at FROM subjects WHERE license_id=${s.licenseId} AND is_active=true ORDER BY name`,
    sql`SELECT sc.id,sc.subject_id,su.name subject_name,su.teacher_name,sc.day_name,sc.start_time,sc.end_time,sc.room,sc.updated_at
        FROM subject_schedules sc JOIN subjects su ON su.id=sc.subject_id
        WHERE sc.license_id=${s.licenseId} AND sc.class_id=${classId}
@@ -127,7 +131,7 @@ export async function GET(req:Request){
    profile:{...p,class_name:activeClass.name,academic_year:activeClass.academic_year,active_class_id:classId,is_homeroom:activeClass.is_homeroom},
    classes:workspace.classes,
    teachingAssignments:workspace.assignments,
-   students,attendance,attendanceSummary,notes,achievements,followUps,agendas,subjects,schedules,assessments,scores,
+   students,attendance,attendanceSummary,notes,achievements,followUps,agendas,subjects,subjectCatalog,schedules,assessments,scores,
    academicSettings:settings[0]||{active_semester:'Ganjil',calculation_mode:'Otomatis',daily_weight:30,quiz_weight:30,semester_weight:40},
    reportNotes,adminItems,officers,duties,archives
   });
