@@ -1,7 +1,7 @@
-name: KelasKita V3 Build Audit
+name: KelasKita Build Audit
 on:
   push:
-    branches: [v3-admin-suite]
+    branches: [main, v3-admin-suite]
   workflow_dispatch:
 jobs:
   build:
