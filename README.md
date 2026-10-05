@@ -34,3 +34,10 @@ Salin `.env.example` menjadi `.env.local`, lalu isi seluruh environment variable
 Skema induk ada di `database/schema.sql`. Snapshot V3 tersedia di `database/schema-v3.sql`.
 
 <!-- V3 owner environment refresh 2 -->
+
+## V4 — Onboarding, Impor Excel, dan Multi-Device Cloud
+- Impor siswa Excel dengan preview, pemetaan kolom, validasi NISN/NIS/nama, dan strategi merge.
+- Impor nilai Excel untuk semester yang sudah berjalan, termasuk pembuatan penilaian otomatis dan penanganan konflik nilai.
+- Onboarding khusus pengguna yang sudah memiliki data sebelumnya.
+- Multi-device cloud dengan batas awal 5 perangkat aktif per lisensi.
+- Proteksi konflik edit untuk data inti saat dipakai dari beberapa perangkat.
