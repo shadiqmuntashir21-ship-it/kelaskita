@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getSession } from '@/lib/auth';
+import {getClassSession as getSession} from '@/lib/class-session';
 import { db } from '@/lib/db';
 import { ensureV4Schema } from '@/lib/v4-schema';
 
