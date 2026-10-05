@@ -91,4 +91,31 @@ async function bytes(wb){
   assert.equal(s.classHint,'XI DKV 1');
 }
 
-console.log('Smart Excel Reader: 5 skenario lulus termasuk browser ArrayBuffer.');
+
+
+// 6. Workbook multi-kelas seperti FORMATIF 2: sheet 2A-2D dan nilai per bulan
+{
+  const wb=new ExcelJS.Workbook();
+  const defs=[
+    ['2A',2,[['ABIZAR ALFATIH',63,'',96],['ANNISA SALSABILA',88,'',91]]],
+    ['2B',3,[['ATIA SYAKIRA NUR SHOLEHA',75,80,84],['BIMA ADITYA',82,78,90]]],
+    ['2C',3,[['ADEEVA MEISYA',90,'',88],['RAKA PRATAMA',70,'',79]]],
+    ['2D',6,[['ATIA SYAKIRA NUR SHOLEHA',81,'',85],['NAYLA PUTRI',92,'',94]]],
+  ];
+  for(const [name,headerRow,data] of defs){
+    const ws=wb.addWorksheet(String(name));
+    ws.addRow(['NILAI HASIL UJIAN FORMATIF '+name+' 2026']);
+    while(ws.rowCount<Number(headerRow)-1)ws.addRow([]);
+    ws.addRow(['NAMA','JULI','AGUSTUS','SEPTEMBER']);
+    for(const row of data)ws.addRow(row);
+  }
+  const sheets=await analyzeWorkbook(await bytes(wb),'nilai');
+  const classSheets=sheets.filter(s=>['2A','2B','2C','2D'].includes(s.classHint));
+  assert.equal(classSheets.length,4,JSON.stringify(sheets.map(s=>({name:s.name,classHint:s.classHint}))));
+  for(const s of classSheets){
+    assert.equal(s.suggestions.name,'NAMA');
+    assert.ok(s.scoreColumns.some(x=>/Formatif Juli/i.test(x.name)),JSON.stringify(s.scoreColumns));
+    assert.ok(s.scoreColumns.some(x=>/Formatif September/i.test(x.name)),JSON.stringify(s.scoreColumns));
+  }
+}
+console.log('Smart Excel Reader: 6 skenario lulus termasuk workbook multi-kelas FORMATIF.');
