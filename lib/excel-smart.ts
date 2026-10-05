@@ -226,7 +226,9 @@ export function analyzeWorksheet(ws:any,kind:ImportKind){
   return{name:ws.name,headerRow,headers,rows,suggestions,scoreColumns,subjectHint:meta.subjectHint,classHint:detectedClass,qualityScore};
 }
 export async function analyzeWorkbook(buffer:ArrayBuffer|Buffer,kind:ImportKind){
-  const wb=new ExcelJS.Workbook();await wb.xlsx.load(buffer as any);
+  const wb=new ExcelJS.Workbook();
+  const input=Buffer.isBuffer(buffer)?buffer:Buffer.from(buffer);
+  await wb.xlsx.load(input);
   const sheets=wb.worksheets.filter(w=>w.rowCount>0).map(w=>analyzeWorksheet(w,kind)).filter(s=>s.rows.length||s.headers.length);
   sheets.sort((a,b)=>b.qualityScore-a.qualityScore);
   return sheets;
