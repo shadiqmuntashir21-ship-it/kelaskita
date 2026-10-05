@@ -1,9 +1,9 @@
 # KelasKita
 
-KelasKita adalah ruang kerja digital wali kelas berbahasa Indonesia. Pelanggan masuk menggunakan **kode lisensi + PIN**, sedangkan Mode Demo memakai data contoh lokal dan tidak menulis ke database pelanggan.
+KelasKita adalah ruang kerja digital guru berbahasa Indonesia untuk wali kelas, guru mata pelajaran, atau keduanya. Pelanggan masuk menggunakan **kode lisensi + PIN**, sedangkan Mode Demo memakai data contoh lokal dan tidak menulis ke database pelanggan.
 
-## Fitur V3
-- Beranda harian wali kelas
+## Fitur Utama
+- Beranda kerja guru dengan ruang kelas aktif
 - Siswa 360°
 - Kehadiran harian
 - Mata pelajaran, penilaian, nilai massal, remedial, dan jadwal pelajaran
@@ -43,3 +43,16 @@ Skema induk ada di `database/schema.sql`. Snapshot V3 tersedia di `database/sche
 - Proteksi konflik edit untuk data inti saat dipakai dari beberapa perangkat.
 
 <!-- release: smart-excel-reader-final-2026-10-05 -->
+
+
+## V5 — Satu Lisensi untuk Satu Guru
+- Satu lisensi dapat mengelola beberapa kelas dan mata pelajaran.
+- Onboarding peran: Wali Kelas, Guru Mata Pelajaran, atau Keduanya.
+- Data operasional terisolasi per kelas melalui `class_id` dan `class_enrollments`.
+- Workspace switcher untuk berpindah kelas tanpa membuat akun baru.
+- Smart Excel Reader multi-sheet untuk workbook kelas seperti 2A, 2B, 2C, 2D.
+- Impor nilai formatif bulanan dan rekap nilai lintas kelas dalam satu workbook.
+- Backup JSON dan reset data kelas dengan konfirmasi eksplisit tanpa menghapus lisensi.
+- Tutup tahun ajaran per kelas; kelas lain pada lisensi yang sama tidak disentuh.
+- Pembelian dan lisensi manual mengikuti model 1 lisensi = 1 guru; kelas ditentukan saat onboarding.
+- Snapshot skema V5 tersedia di `database/schema-v5.sql`.
