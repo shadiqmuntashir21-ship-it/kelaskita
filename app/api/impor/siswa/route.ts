@@ -30,9 +30,9 @@ function parseRow(row:any,mapping:any){
     phone:normalizePhone(raw.phone)
   };
 }
-function makeMatcher(existing:any[]){
-  const byNisn=new Map(existing.filter(x=>x.nisn).map(x=>[str(x.nisn),x]));
-  const byNis=new Map(existing.filter(x=>x.nis).map(x=>[str(x.nis),x]));
+function makeMatcher(existing:any[],globalExact:any[]){
+  const byNisn=new Map(globalExact.filter(x=>x.nisn).map(x=>[str(x.nisn),x]));
+  const byNis=new Map(globalExact.filter(x=>x.nis).map(x=>[str(x.nis),x]));
   const byName=new Map<string,any[]>();
   existing.forEach(x=>{const k=normName(x.name);byName.set(k,[...(byName.get(k)||[]),x])});
   return(x:any)=>{
@@ -61,8 +61,11 @@ export async function POST(req:Request){
     const sql=db();
     const cls=await resolveClassContext(s.licenseId,body.class_id);
     if(!cls)return NextResponse.json({message:'Kelas aktif belum dipilih.'},{status:400});
-    const existing=await sql`SELECT st.id,st.nis,st.nisn,st.name,st.gender,st.birth_place,st.birth_date,st.address,st.guardian_name,st.guardian_phone,st.phone,st.status FROM class_enrollments ce JOIN students st ON st.id=ce.student_id WHERE ce.license_id=${s.licenseId} AND ce.class_id=${cls.id} AND ce.status='Aktif' AND st.status<>'Dihapus'`;
-    const match=makeMatcher(existing as any[]);
+    const [existing,globalExact]=await Promise.all([
+      sql`SELECT st.id,st.nis,st.nisn,st.name,st.gender,st.birth_place,st.birth_date,st.address,st.guardian_name,st.guardian_phone,st.phone,st.status FROM class_enrollments ce JOIN students st ON st.id=ce.student_id WHERE ce.license_id=${s.licenseId} AND ce.class_id=${cls.id} AND ce.status='Aktif' AND st.status<>'Dihapus'`,
+      sql`SELECT id,nis,nisn,name,status FROM students WHERE license_id=${s.licenseId}`
+    ]);
+    const match=makeMatcher(existing as any[],globalExact as any[]);
     const parsed=body.rows.map((row:any,index:number)=>({index,data:parseRow(row,mapping)})).filter((x:any)=>x.data.name&&x.data.name.length>=2);
     const detectedClass=mostCommonClass(parsed);
     const review=parsed.map((entry:any)=>{
@@ -91,7 +94,7 @@ export async function POST(req:Request){
           gender=COALESCE(NULLIF(${x.gender},''),gender),birth_place=COALESCE(NULLIF(${x.birth_place},''),birth_place),
           birth_date=COALESCE(NULLIF(${x.birth_date},'')::date,birth_date),address=COALESCE(NULLIF(${x.address},''),address),
           guardian_name=COALESCE(NULLIF(${x.guardian_name},''),guardian_name),guardian_phone=COALESCE(NULLIF(${x.guardian_phone},''),guardian_phone),
-          phone=COALESCE(NULLIF(${x.phone},''),phone),updated_at=now()
+          phone=COALESCE(NULLIF(${x.phone},''),phone),status='Aktif',updated_at=now()
           WHERE id=${m.student.id} AND license_id=${s.licenseId}`;
         updated++;
       }else{
