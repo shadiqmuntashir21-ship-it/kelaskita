@@ -53,6 +53,29 @@ export function ensureV5Schema(){
       UNIQUE(license_id,class_id,subject_id)
     )`;
     await sql`CREATE INDEX IF NOT EXISTS idx_teaching_assignments_license ON teaching_assignments(license_id,class_id,is_active)`;
+    await sql`CREATE TABLE IF NOT EXISTS subject_attendance_sessions(
+      id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+      license_id uuid NOT NULL REFERENCES licenses(id) ON DELETE CASCADE,
+      class_id uuid NOT NULL REFERENCES classes(id) ON DELETE CASCADE,
+      subject_id uuid NOT NULL REFERENCES subjects(id) ON DELETE CASCADE,
+      meeting_date date NOT NULL,
+      meeting_no integer NOT NULL DEFAULT 1,
+      note text,
+      created_at timestamptz NOT NULL DEFAULT now(),
+      updated_at timestamptz NOT NULL DEFAULT now(),
+      UNIQUE(license_id,class_id,subject_id,meeting_date,meeting_no)
+    )`;
+    await sql`CREATE INDEX IF NOT EXISTS idx_subject_attendance_sessions ON subject_attendance_sessions(license_id,class_id,subject_id,meeting_date)`;
+    await sql`CREATE TABLE IF NOT EXISTS subject_attendance_records(
+      id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+      session_id uuid NOT NULL REFERENCES subject_attendance_sessions(id) ON DELETE CASCADE,
+      student_id uuid NOT NULL REFERENCES students(id) ON DELETE CASCADE,
+      status varchar(30) NOT NULL DEFAULT 'Hadir',
+      note text,
+      created_at timestamptz NOT NULL DEFAULT now(),
+      updated_at timestamptz NOT NULL DEFAULT now(),
+      UNIQUE(session_id,student_id)
+    )`;
 
     await sql`ALTER TABLE attendance_days ADD COLUMN IF NOT EXISTS class_id uuid REFERENCES classes(id) ON DELETE CASCADE`;
     await sql`ALTER TABLE student_notes ADD COLUMN IF NOT EXISTS class_id uuid REFERENCES classes(id) ON DELETE CASCADE`;
