@@ -35,7 +35,7 @@ export default function ImportDataWizard({kind,data,onClose,onDone}:{kind:Kind;d
  const[applyDetectedClass,setApplyDetectedClass]=useState(true),[multiMode,setMultiMode]=useState(false),[classNames,setClassNames]=useState<Record<string,string>>({});
  const sheet=book?.sheets?.[sheetIndex],headers=sheet?.headers||[],rows=sheet?.rows||[];
  const selectedAssessments=useMemo(()=>assessments.filter((x:any)=>x.include),[assessments]);
- const subjectCatalog=data.subjectCatalog||subjectCatalog;
+ const subjectCatalog=data.subjectCatalog||data.subjects||[];
  const multiSheets=useMemo(()=>kind==='nilai'?(book?.sheets||[]).filter((s:any)=>s.classHint&&s.suggestions?.name&&(s.scoreColumns||[]).length):[],[book,kind]);
 
  function initSheet(s:any){
@@ -53,7 +53,7 @@ export default function ImportDataWizard({kind,data,onClose,onDone}:{kind:Kind;d
    const hit=closestSubject(subjectCatalog,s.subjectHint||'');
    if(hit){setSubject(hit.id);setNewSubject('')}
    else if(s.subjectHint){setSubject('__new__');setNewSubject(s.subjectHint)}
-   else if((subjectCatalog).length===1){setSubject(data.subjects[0].id);setNewSubject('')}
+   else if((subjectCatalog).length===1){setSubject(subjectCatalog[0].id);setNewSubject('')}
    else{setSubject('');setNewSubject('')}
   }
  }
