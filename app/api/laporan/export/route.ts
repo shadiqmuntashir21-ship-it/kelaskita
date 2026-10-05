@@ -8,11 +8,33 @@ export const runtime='nodejs';
 
 type R=(string|number|null|undefined)[];
 const s=(v:any)=>v==null?'':String(v);
-const titles:any={siswa:'Daftar Siswa',kehadiran:'Rekap Kehadiran',nilai:'Laporan Nilai',prestasi:'Rekap Prestasi',catatan:'Catatan Wali Kelas',tindak:'Tindak Lanjut',agenda:'Agenda Kelas',rapor:'Catatan Rapor',administrasi:'Kelengkapan Administrasi',struktur:'Struktur Kelas & Piket'};
+const titles:any={siswa:'Daftar Siswa',kehadiran:'Rekap Kehadiran', 'kehadiran-mapel':'Rekap Kehadiran Pertemuan',nilai:'Laporan Nilai',prestasi:'Rekap Prestasi',catatan:'Catatan Wali Kelas',tindak:'Tindak Lanjut',agenda:'Agenda Kelas',rapor:'Catatan Rapor',administrasi:'Kelengkapan Administrasi',struktur:'Struktur Kelas & Piket'};
 
 async function data(sql:any,id:string,classId:string,j:string,month:string,subject?:string|null){
  if(j==='siswa'){const x=await sql`SELECT st.nis,st.nisn,st.name,st.gender,st.guardian_name,st.guardian_phone,st.phone,st.address,st.status FROM class_enrollments ce JOIN students st ON st.id=ce.student_id WHERE ce.license_id=${id} AND ce.class_id=${classId} AND ce.status='Aktif' AND st.status<>'Dihapus' ORDER BY st.name`;return{h:['NIS','NISN','Nama Siswa','Jenis Kelamin','Wali Siswa','No. Wali','No. Siswa','Alamat','Status'],r:x.map((a:any)=>[a.nis,a.nisn,a.name,a.gender,a.guardian_name,a.guardian_phone,a.phone,a.address,a.status])}}
  if(j==='kehadiran'){const d=`${month}-01`,x=await sql`SELECT st.nis,st.name,COUNT(*) FILTER(WHERE ar.status='Hadir') hadir,COUNT(*) FILTER(WHERE ar.status='Sakit') sakit,COUNT(*) FILTER(WHERE ar.status='Izin') izin,COUNT(*) FILTER(WHERE ar.status='Alfa') alfa,COUNT(*) FILTER(WHERE ar.status='Terlambat') terlambat,COUNT(*) FILTER(WHERE ar.status='Dispensasi') dispensasi FROM class_enrollments ce JOIN students st ON st.id=ce.student_id LEFT JOIN attendance_days ad ON ad.license_id=${id} AND ad.class_id=${classId} AND ad.attendance_date>=${d}::date AND ad.attendance_date<(${d}::date+interval '1 month') LEFT JOIN attendance_records ar ON ar.attendance_day_id=ad.id AND ar.student_id=st.id WHERE ce.license_id=${id} AND ce.class_id=${classId} AND ce.status='Aktif' AND st.status<>'Dihapus' GROUP BY st.id,st.nis,st.name ORDER BY st.name`;return{h:['NIS','Nama Siswa','Hadir','Sakit','Izin','Alfa','Terlambat','Dispensasi'],r:x.map((a:any)=>[a.nis,a.name,a.hadir,a.sakit,a.izin,a.alfa,a.terlambat,a.dispensasi])}}
+ if(j==='kehadiran-mapel'){
+  if(!subject)return{h:['Keterangan'],r:[['Pilih mata pelajaran terlebih dahulu.']]};
+  const d=`${month}-01`;
+  const x=await sql`SELECT st.nis,st.name,
+    COUNT(sar.id)::int pertemuan_tercatat,
+    COUNT(*) FILTER(WHERE sar.status='Hadir') hadir,
+    COUNT(*) FILTER(WHERE sar.status='Sakit') sakit,
+    COUNT(*) FILTER(WHERE sar.status='Izin') izin,
+    COUNT(*) FILTER(WHERE sar.status='Alfa') alfa,
+    COUNT(*) FILTER(WHERE sar.status='Terlambat') terlambat,
+    COUNT(*) FILTER(WHERE sar.status='Dispensasi') dispensasi
+    FROM class_enrollments ce
+    JOIN students st ON st.id=ce.student_id
+    LEFT JOIN subject_attendance_sessions sas
+      ON sas.license_id=${id} AND sas.class_id=${classId} AND sas.subject_id=${subject}
+      AND sas.meeting_date>=${d}::date AND sas.meeting_date<(${d}::date+interval '1 month')
+    LEFT JOIN subject_attendance_records sar ON sar.session_id=sas.id AND sar.student_id=st.id
+    WHERE ce.license_id=${id} AND ce.class_id=${classId} AND ce.status='Aktif' AND st.status<>'Dihapus'
+    GROUP BY st.id,st.nis,st.name ORDER BY st.name`;
+  return{h:['NIS','Nama Siswa','Pertemuan Tercatat','Hadir','Sakit','Izin','Alfa','Terlambat','Dispensasi'],
+    r:x.map((a:any)=>[a.nis,a.name,a.pertemuan_tercatat,a.hadir,a.sakit,a.izin,a.alfa,a.terlambat,a.dispensasi])}
+ }
  if(j==='nilai'){const x=subject?await sql`SELECT st.nis,st.name student,su.name subject,a.name assessment,a.category,a.semester,a.max_score,ss.score,ss.remedial_score FROM assessments a JOIN subjects su ON su.id=a.subject_id JOIN class_enrollments ce ON ce.license_id=${id} AND ce.class_id=${classId} AND ce.status='Aktif' JOIN students st ON st.id=ce.student_id LEFT JOIN student_scores ss ON ss.assessment_id=a.id AND ss.student_id=st.id WHERE a.license_id=${id} AND a.class_id=${classId} AND st.status<>'Dihapus' AND a.subject_id=${subject} ORDER BY su.name,a.assessment_date,st.name`:await sql`SELECT st.nis,st.name student,su.name subject,a.name assessment,a.category,a.semester,a.max_score,ss.score,ss.remedial_score FROM assessments a JOIN subjects su ON su.id=a.subject_id JOIN class_enrollments ce ON ce.license_id=${id} AND ce.class_id=${classId} AND ce.status='Aktif' JOIN students st ON st.id=ce.student_id LEFT JOIN student_scores ss ON ss.assessment_id=a.id AND ss.student_id=st.id WHERE a.license_id=${id} AND a.class_id=${classId} AND st.status<>'Dihapus' ORDER BY su.name,a.assessment_date,st.name`;return{h:['NIS','Nama Siswa','Mata Pelajaran','Penilaian','Jenis','Semester','Nilai Maks.','Nilai','Remedial','Nilai Digunakan'],r:x.map((a:any)=>[a.nis,a.student,a.subject,a.assessment,a.category,a.semester,a.max_score,a.score,a.remedial_score,a.remedial_score??a.score])}}
  if(j==='prestasi'){const x=await sql`SELECT st.nis,st.name,a.title,a.category,a.level,a.organizer,a.rank,a.achieved_at FROM achievements a JOIN students st ON st.id=a.student_id WHERE a.license_id=${id} AND a.class_id=${classId} ORDER BY a.achieved_at DESC`;return{h:['NIS','Nama Siswa','Prestasi','Kategori','Tingkat','Penyelenggara','Peringkat','Tanggal'],r:x.map((a:any)=>[a.nis,a.name,a.title,a.category,a.level,a.organizer,a.rank,a.achieved_at])}}
  if(j==='catatan'){const x=await sql`SELECT st.nis,st.name,n.category,n.title,n.content,n.status,n.occurred_at FROM student_notes n JOIN students st ON st.id=n.student_id WHERE n.license_id=${id} AND n.class_id=${classId} ORDER BY n.occurred_at DESC`;return{h:['NIS','Nama Siswa','Kategori','Judul','Catatan','Status','Tanggal'],r:x.map((a:any)=>[a.nis,a.name,a.category,a.title,a.content,a.status,a.occurred_at])}}
@@ -31,7 +53,7 @@ export async function GET(req:Request){
  try{
   const u=new URL(req.url),j=u.searchParams.get('jenis')||'siswa',format=u.searchParams.get('format')==='pdf'?'pdf':'xlsx',month=u.searchParams.get('bulan')||new Date().toISOString().slice(0,7),subject=u.searchParams.get('subject_id'),classId=u.searchParams.get('class_id'),sql=db();
   const cls=await resolveClassContext(ses.licenseId,classId);if(!cls)return NextResponse.json({message:'Kelas tidak ditemukan.'},{status:404});
-  const pr=await sql`SELECT school_name FROM licenses WHERE id=${ses.licenseId}`,profile=pr[0],d=await data(sql,ses.licenseId,String(cls.id),j,month,subject),title=titles[j]||'Laporan Kelas',sub=`${profile.school_name} · ${cls.name} · ${cls.academic_year}${j==='kehadiran'?' · '+month:''}`,body=format==='pdf'?await pdf(title,sub,d.h,d.r):await xlsx(title,sub,d.h,d.r),ext=format==='pdf'?'pdf':'xlsx';
+  const pr=await sql`SELECT school_name FROM licenses WHERE id=${ses.licenseId}`,profile=pr[0],d=await data(sql,ses.licenseId,String(cls.id),j,month,subject),title=titles[j]||'Laporan Kelas',sub=`${profile.school_name} · ${cls.name} · ${cls.academic_year}${(j==='kehadiran'||j==='kehadiran-mapel')?' · '+month:''}`,body=format==='pdf'?await pdf(title,sub,d.h,d.r):await xlsx(title,sub,d.h,d.r),ext=format==='pdf'?'pdf':'xlsx';
   return new NextResponse(new Uint8Array(body),{headers:{'Content-Type':format==='pdf'?'application/pdf':'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet','Content-Disposition':`attachment; filename="KelasKita_${j}_${String(cls.name).replace(/[^A-Za-z0-9_-]+/g,'_')}_${month}.${ext}"`}});
  }catch(e){console.error(e);return NextResponse.json({message:'Laporan belum berhasil dibuat.'},{status:500})}
 }
