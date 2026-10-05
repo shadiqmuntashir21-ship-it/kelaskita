@@ -61,7 +61,7 @@ export async function POST(req:Request){
     const subjectId=resolvedSubject.subject.id as string|null;
     const subjectName=String(resolvedSubject.subject.name);
 
-    const globalStudents=await sql`SELECT id,nis,nisn,name FROM students WHERE license_id=${s.licenseId} AND status<>'Dihapus'`;
+    const globalStudents=await sql`SELECT id,nis,nisn,name,status FROM students WHERE license_id=${s.licenseId}`;
     const byNisn=new Map<string,any>(),byNis=new Map<string,any>();
     (globalStudents as any[]).forEach(st=>{if(st.nisn)byNisn.set(clean(st.nisn),st);if(st.nis)byNis.set(clean(st.nis),st)});
 
@@ -141,6 +141,7 @@ export async function POST(req:Request){
           st=made[0];
           if(st.nisn)byNisn.set(clean(st.nisn),st);if(st.nis)byNis.set(clean(st.nis),st);
         }
+        await sql`UPDATE students SET status='Aktif',updated_at=now() WHERE id=${st.id} AND license_id=${s.licenseId}`;
         await sql`INSERT INTO class_enrollments(license_id,class_id,student_id,status)
           VALUES(${s.licenseId},${classId},${st.id},'Aktif')
           ON CONFLICT(class_id,student_id) DO UPDATE SET status='Aktif',left_at=NULL,updated_at=now()`;
