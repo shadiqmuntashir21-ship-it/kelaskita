@@ -89,6 +89,7 @@ export function ensureV5Schema(){
     await sql`INSERT INTO classes(license_id,name,academic_year,is_homeroom)
       SELECT id,COALESCE(NULLIF(trim(class_name),''),'Kelas Utama'),academic_year,true
       FROM licenses
+      WHERE usage_mode IS NULL
       ON CONFLICT(license_id,academic_year,name) DO NOTHING`;
 
     // Hubungkan seluruh siswa lama ke kelas kompatibilitas tanpa menghapus data apa pun.
