@@ -114,23 +114,26 @@ function detectHeaderRow(ws:any,kind:ImportKind){
 }
 function buildHeaders(ws:any,row:number){
   const maxCol=Math.min(ws.columnCount||0,100),headers:string[]=[],used=new Map<string,number>();
-  let scoreGroup='';
+  let currentScoreGroup='';
   for(let c=1;c<=maxCol;c++){
     const cur=String(ws.getRow(row).getCell(c).text||readCell(ws.getRow(row).getCell(c))||'').trim();
     const prev=row>1?String(ws.getRow(row-1).getCell(c).text||readCell(ws.getRow(row-1).getCell(c))||'').trim():'';
-    if(prev&&SCORE_HINT.test(prev))scoreGroup=prev;
+    const next=row<(ws.rowCount||0)?String(ws.getRow(row+1).getCell(c).text||readCell(ws.getRow(row+1).getCell(c))||'').trim():'';
+    if(cur&&SCORE_HINT.test(cur))currentScoreGroup=cur;
+    else if(prev&&SCORE_HINT.test(prev))currentScoreGroup=prev;
+
     let raw=cur;
-    if((!cur||/^\d{1,2}$/.test(cur))&&scoreGroup&&SCORE_HINT.test(scoreGroup))raw=cur?`${scoreGroup} ${cur}`:scoreGroup;
+    if(currentScoreGroup&&/^\d{1,2}$/.test(next))raw=`${currentScoreGroup} ${next}`;
+    else if(!cur&&currentScoreGroup&&/^\d{1,2}$/.test(next))raw=`${currentScoreGroup} ${next}`;
+    else if((!cur||/^\d{1,2}$/.test(cur))&&currentScoreGroup&&SCORE_HINT.test(currentScoreGroup))raw=cur?`${currentScoreGroup} ${cur}`:currentScoreGroup;
     if(!raw&&prev&&!/^(sekolah|kelas|mata pelajaran|mapel)\b/i.test(prev))raw=prev;
     raw=raw||`Kolom ${c}`;
     const n=(used.get(raw)||0)+1;used.set(raw,n);headers.push(n===1?raw:`${raw} (${n})`);
   }
   while(headers.length>1){
-    const idx=headers.length-1;
-    let any=false;
+    const idx=headers.length-1;let any=false;
     for(let r=row+1;r<=Math.min(ws.rowCount,row+30);r++)if(String(readCell(ws.getRow(r).getCell(idx+1))??'').trim()){any=true;break}
-    if(any||!/^Kolom \d+$/.test(headers[idx]))break;
-    headers.pop();
+    if(any||!/^Kolom \d+$/.test(headers[idx]))break;headers.pop();
   }
   return headers;
 }
