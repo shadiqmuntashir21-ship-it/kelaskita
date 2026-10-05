@@ -114,17 +114,23 @@ function detectHeaderRow(ws:any,kind:ImportKind){
 }
 function buildHeaders(ws:any,row:number){
   const maxCol=Math.min(ws.columnCount||0,100),headers:string[]=[],used=new Map<string,number>();
+  let nameCol=0;
+  for(let c=1;c<=maxCol;c++){
+    const cur=String(ws.getRow(row).getCell(c).text||readCell(ws.getRow(row).getCell(c))||'').trim();
+    if(matchesField(cur,'name')){nameCol=c;break}
+  }
+  const nextName=nameCol&&row<(ws.rowCount||0)?String(readCell(ws.getRow(row+1).getCell(nameCol))??'').trim():'';
+  const useNextSubheader=!!nameCol&&!nextName;
   let currentScoreGroup='';
   for(let c=1;c<=maxCol;c++){
     const cur=String(ws.getRow(row).getCell(c).text||readCell(ws.getRow(row).getCell(c))||'').trim();
     const prev=row>1?String(ws.getRow(row-1).getCell(c).text||readCell(ws.getRow(row-1).getCell(c))||'').trim():'';
-    const next=row<(ws.rowCount||0)?String(ws.getRow(row+1).getCell(c).text||readCell(ws.getRow(row+1).getCell(c))||'').trim():'';
+    const next=useNextSubheader&&row<(ws.rowCount||0)?String(ws.getRow(row+1).getCell(c).text||readCell(ws.getRow(row+1).getCell(c))||'').trim():'';
     if(cur&&SCORE_HINT.test(cur))currentScoreGroup=cur;
     else if(prev&&SCORE_HINT.test(prev))currentScoreGroup=prev;
 
     let raw=cur;
-    if(currentScoreGroup&&/^\d{1,2}$/.test(next))raw=`${currentScoreGroup} ${next}`;
-    else if(!cur&&currentScoreGroup&&/^\d{1,2}$/.test(next))raw=`${currentScoreGroup} ${next}`;
+    if(useNextSubheader&&currentScoreGroup&&/^\d{1,2}$/.test(next))raw=`${currentScoreGroup} ${next}`;
     else if((!cur||/^\d{1,2}$/.test(cur))&&currentScoreGroup&&SCORE_HINT.test(currentScoreGroup))raw=cur?`${currentScoreGroup} ${cur}`:currentScoreGroup;
     if(!raw&&prev&&!/^(sekolah|kelas|mata pelajaran|mapel)\b/i.test(prev))raw=prev;
     raw=raw||`Kolom ${c}`;
