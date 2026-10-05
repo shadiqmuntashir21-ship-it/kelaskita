@@ -64,7 +64,7 @@ export default function KelasKitaApp({mode}:{mode:Mode}){
 
  function normalized(sc:any,a:any){const v=useScore(sc);return v===null?null:Math.min(100,(v/Math.max(1,n(a.max_score)||100))*100)}
  function subjectFinal(studentId:string,subjectId:string){const aset=(data.assessments||[]).filter((a:any)=>a.subject_id===subjectId&&a.semester===data.academicSettings.active_semester);const vals=aset.map((a:any)=>{const sc=scoreIndex.get(`${a.id}:${studentId}`),v=sc?normalized(sc,a):null;return v===null?null:{c:a.category,v}}).filter(Boolean);if(!vals.length)return null;if(data.academicSettings.calculation_mode!=='Otomatis')return vals.reduce((s:any,x:any)=>s+x.v,0)/vals.length;const avg=(cats:string[])=>{const x=vals.filter((v:any)=>cats.includes(v.c));return x.length?x.reduce((s:any,y:any)=>s+y.v,0)/x.length:null};const parts=[[avg(['Tugas Harian']),n(data.academicSettings.daily_weight)],[avg(['Ulangan Harian']),n(data.academicSettings.quiz_weight)],[avg(['Tengah Semester','Akhir Semester','Lainnya']),n(data.academicSettings.semester_weight)]];let total=0,w=0;parts.forEach(([v,wt]:any)=>{if(v!==null&&wt>0){total+=v*wt;w+=wt}});return w?total/w:null}
- const isMapelOnly=data.profile?.usage_mode==='mapel';
+ const isMapelOnly=data.profile?.usage_mode==='mapel'||(data.profile?.usage_mode==='keduanya'&&!data.profile?.is_homeroom);
  function attendanceInfo(id:string){return (data.attendanceSummary||[]).find((x:any)=>x.student_id===id)||{total:0,hadir:0,sakit:0,izin:0,alfa:0,terlambat:0}}
  function warnings(id:string){const out:string[]=[],a=attendanceInfo(id);if(!isMapelOnly&&n(a.alfa)>=3)out.push(`${a.alfa} kali alfa`);if(!isMapelOnly&&n(a.terlambat)>=5)out.push(`${a.terlambat} kali terlambat`);const below=(data.subjects||[]).filter((s:any)=>{const v=subjectFinal(id,s.id);return v!==null&&v<n(s.mastery_score)}).length;if(below)out.push(`${below} mata pelajaran belum tuntas`);if(!isMapelOnly){const overdue=(data.followUps||[]).filter((f:any)=>f.student_id===id&&f.status!=='Selesai'&&f.due_date&&f.due_date<date).length;if(overdue)out.push(`${overdue} tindak lanjut melewati target`)}return out}
  const alertRows=useMemo(()=>data.students?.map((s:any)=>({student:s,alerts:warnings(s.id)})).filter((x:any)=>x.alerts.length).sort((a:any,b:any)=>b.alerts.length-a.alerts.length)||[],[data,date]);
@@ -73,7 +73,7 @@ export default function KelasKitaApp({mode}:{mode:Mode}){
  const filtered=(data.students||[]).filter((s:any)=>`${s.name} ${s.nis||''} ${s.nisn||''} ${s.guardian_name||''}`.toLowerCase().includes(search.toLowerCase()));
  const todaySchedules=(data.schedules||[]).filter((s:any)=>s.day_name===weekday());
  const navVisible=isMapelOnly?nav.filter(([k])=>['beranda','siswa','kehadiran','akademik','jadwal','laporan','pengaturan'].includes(k)):nav;
- const roleLabel=data.profile?.usage_mode==='mapel'?'Guru Mata Pelajaran':data.profile?.usage_mode==='keduanya'?'Wali Kelas + Guru Mapel':data.profile?.usage_mode==='pending'?'Pengaturan Awal':'Wali Kelas';
+ const roleLabel=data.profile?.usage_mode==='mapel'?'Guru Mata Pelajaran':data.profile?.usage_mode==='keduanya'?(data.profile?.is_homeroom?'Wali Kelas · Ruang Wali':'Guru Mata Pelajaran · Ruang Ajar'):data.profile?.usage_mode==='pending'?'Pengaturan Awal':'Wali Kelas';
  async function changeClass(id:string){setActiveClassId(id);setSelectedSubject('');setDocStudent('');await load(id)}
 
  async function saveAttendance(){const records=data.students.map((s:any)=>({student_id:s.id,status:attendance[s.id]||'Hadir',note:''}));if(mode==='demo'){setData((d:any)=>({...d,attendance:records}));return flash('Kehadiran demo disimpan.')}try{await api('/api/kehadiran','POST',{date,records,class_id:activeClassId||data.profile?.active_class_id});flash('Kehadiran disimpan.');load()}catch(e:any){flash(e.message)}}
@@ -100,6 +100,7 @@ export default function KelasKitaApp({mode}:{mode:Mode}){
  const Kehadiran=()=> <AttendanceWorkspace
   mode={mode}
   usageMode={data.profile?.usage_mode||'wali'}
+  isHomeroom={!!data.profile?.is_homeroom}
   classId={activeClassId||data.profile?.active_class_id||''}
   className={data.profile?.class_name||'Kelas aktif'}
   students={data.students||[]}
