@@ -56,6 +56,7 @@ export async function POST(req:Request){
           throw e;
         }
       }
+      await sql`UPDATE students SET status='Aktif',updated_at=now() WHERE id=${student.id} AND license_id=${session.licenseId}`;
       const en=await sql`INSERT INTO class_enrollments(license_id,class_id,student_id,status)
         VALUES(${session.licenseId},${cls.id},${student.id},'Aktif')
         ON CONFLICT(class_id,student_id) DO UPDATE SET status='Aktif',left_at=NULL,updated_at=now()
