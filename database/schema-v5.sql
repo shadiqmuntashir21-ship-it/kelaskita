@@ -62,6 +62,7 @@ CREATE UNIQUE INDEX IF NOT EXISTS uq_attendance_days_class_date ON attendance_da
 CREATE UNIQUE INDEX IF NOT EXISTS uq_admin_items_class_key ON class_admin_items(license_id,class_id,item_key);
 CREATE UNIQUE INDEX IF NOT EXISTS uq_officers_class_role ON class_officers(license_id,class_id,role_name);
 CREATE UNIQUE INDEX IF NOT EXISTS uq_duty_class_student_day ON duty_roster(license_id,class_id,student_id,day_name);
+CREATE UNIQUE INDEX IF NOT EXISTS uq_report_notes_class_student_term ON report_notes(license_id,class_id,student_id,academic_year,semester);
 
 -- Existing licenses are migrated by lib/v5-schema.ts:
 -- 1. Create one compatibility class from licenses.class_name.
@@ -69,3 +70,6 @@ CREATE UNIQUE INDEX IF NOT EXISTS uq_duty_class_student_day ON duty_roster(licen
 -- 3. Attach legacy class operational records to that class.
 -- 4. Keep license/PIN/payment/device access intact.
 -- 5. Leave v5_onboarding_completed=false so the teacher chooses Wali/Mapel/Keduanya once.
+
+-- Runtime migration also drops the legacy report_notes unique constraint on
+-- (license_id, student_id, academic_year, semester) before creating the V5 class-scoped index.
