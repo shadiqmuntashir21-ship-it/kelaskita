@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getSession } from '@/lib/auth';
+import {getClassSession as getSession} from '@/lib/class-session';
 import { db } from '@/lib/db';
 
 async function ownsSubject(sql: ReturnType<typeof db>, licenseId: string, id: string) {
