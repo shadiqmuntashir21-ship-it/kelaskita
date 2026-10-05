@@ -34,9 +34,9 @@ function calendarCells(date:string){
 }
 
 export default function AttendanceWorkspace({
- mode,usageMode,classId,className,students,subjects,onSaved,onMessage
-}:{mode:'demo'|'real';usageMode:string;classId:string;className:string;students:any[];subjects:any[];onSaved:()=>void|Promise<void>;onMessage:(x:string)=>void}){
- const isMapel=usageMode==='mapel';
+ mode,usageMode,isHomeroom,classId,className,students,subjects,onSaved,onMessage
+}:{mode:'demo'|'real';usageMode:string;isHomeroom:boolean;classId:string;className:string;students:any[];subjects:any[];onSaved:()=>void|Promise<void>;onMessage:(x:string)=>void}){
+ const isMapel=usageMode==='mapel'||(usageMode==='keduanya'&&!isHomeroom);
  const[date,setDate]=useState(isoToday()),[subjectId,setSubjectId]=useState(subjects?.[0]?.id||'');
  const[draft,setDraft]=useState<Record<string,{status:string;note:string}>>({});
  const[marked,setMarked]=useState<any[]>([]),[exists,setExists]=useState(false),[busy,setBusy]=useState(false);
