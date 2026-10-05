@@ -1,0 +1,23 @@
+name: KelasKita V3 Build Audit
+on:
+  push:
+    branches: [v3-admin-suite]
+  workflow_dispatch:
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm install --no-audit --no-fund
+      - run: npm run build
+        env:
+          DATABASE_URL: postgresql://placeholder:placeholder@localhost:5432/placeholder
+          SESSION_SECRET: audit-only-session-secret-that-is-long-enough
+          OWNER_PASSWORD: audit-only
+          RESEND_API_KEY: re_audit_placeholder
+          EMAIL_FROM: KelasKita <audit@example.com>
+          OWNER_NOTIFICATION_EMAIL: audit@example.com
