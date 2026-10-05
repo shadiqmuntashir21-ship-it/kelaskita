@@ -1,6 +1,8 @@
 -- KelasKita V4: onboarding, import audit, dan registrasi perangkat cloud
 ALTER TABLE licenses ADD COLUMN IF NOT EXISTS onboarding_completed boolean NOT NULL DEFAULT false;
 ALTER TABLE licenses ADD COLUMN IF NOT EXISTS max_devices integer NOT NULL DEFAULT 5;
+-- Preserve populated accounts during V4 rollout.
+UPDATE licenses l SET onboarding_completed=true WHERE onboarding_completed=false AND EXISTS(SELECT 1 FROM students st WHERE st.license_id=l.id AND st.status<>'Dihapus');
 
 CREATE TABLE IF NOT EXISTS device_sessions (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
