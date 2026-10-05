@@ -29,6 +29,21 @@ export async function GET(req:Request){
   const date=url.searchParams.get('date')||new Date().toISOString().slice(0,10);
   const requestedClass=url.searchParams.get('class_id');
   const sql=db();
+  const roleRows=await sql`SELECT usage_mode,v5_onboarding_completed FROM licenses WHERE id=${s.licenseId} LIMIT 1`;
+  const role:any=roleRows[0]||{};
+  if(role.v5_onboarding_completed===false){
+    if(['wali','mapel','keduanya'].includes(String(role.usage_mode||''))){
+      await sql`UPDATE licenses SET v5_onboarding_completed=true,onboarding_completed=true,updated_at=now() WHERE id=${s.licenseId}`;
+    }else{
+      const [homeroom,assignments]=await Promise.all([
+        sql`SELECT COUNT(*)::int n FROM classes WHERE license_id=${s.licenseId} AND is_active=true AND is_homeroom=true`,
+        sql`SELECT COUNT(*)::int n FROM teaching_assignments WHERE license_id=${s.licenseId} AND is_active=true`
+      ]);
+      if(Number(homeroom[0]?.n||0)===0&&Number(assignments[0]?.n||0)>0){
+        await sql`UPDATE licenses SET usage_mode='mapel',v5_onboarding_completed=true,onboarding_completed=true,updated_at=now() WHERE id=${s.licenseId}`;
+      }
+    }
+  }
   const activeClass=await resolveClassContext(s.licenseId,requestedClass);
   const workspace=await listWorkspaceContext(s.licenseId);
   if(!activeClass){
