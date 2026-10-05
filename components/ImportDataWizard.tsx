@@ -58,11 +58,15 @@ export default function ImportDataWizard({kind,data,onClose,onDone}:{kind:Kind;d
   async function upload(file?:File){
     if(!file)return;setBusy(true);setError('');
     try{
-      const fd=new FormData();fd.append('file',file);fd.append('kind',kind);
-      const r=await fetch('/api/impor/preview',{method:'POST',body:fd});const j=await r.json();
-      if(!r.ok)throw new Error(j.message);
-      const idx=Number(j.suggestedSheetIndex||0);setBook(j);setSource(j.sourceName);setSheetIndex(idx);initSheet(j.sheets[idx]);setStep(2);
-    }catch(e:any){setError(e.message)}finally{setBusy(false)}
+      if(file.size>8*1024*1024)throw new Error('File terlalu besar. Maksimal 8 MB.');
+      const dataUrl=await new Promise<string>((resolve,reject)=>{const fr=new FileReader();fr.onload=()=>resolve(String(fr.result||''));fr.onerror=()=>reject(new Error('Browser belum dapat membaca file Excel ini.'));fr.readAsDataURL(file)});
+      const r=await fetch('/api/impor/preview',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({kind,fileName:file.name,dataUrl})});
+      const j=await r.json().catch(()=>({message:`Server mengembalikan respons ${r.status}.`}));
+      if(!r.ok)throw new Error(j.message||`Excel gagal dibaca (${r.status}).`);
+      const idx=Number(j.suggestedSheetIndex||0);
+      if(!j.sheets?.[idx])throw new Error('Excel terbaca tetapi tidak ditemukan tabel data.');
+      setBook(j);setSource(j.sourceName);setSheetIndex(idx);initSheet(j.sheets[idx]);setStep(2);
+    }catch(e:any){setError(e.message||'Excel belum dapat dibaca.')}finally{setBusy(false)}
   }
   function changeSheet(i:number){setSheetIndex(i);initSheet(book.sheets[i]);setValidation(null)}
   function payload(action:string){
