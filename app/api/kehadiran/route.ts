@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';import { getSession } from '@/lib/auth';import { db } from '@/lib/db';
+import { NextResponse } from 'next/server';import {getClassSession as getSession} from '@/lib/class-session';import { db } from '@/lib/db';
 export async function POST(req:Request){const s=await getSession();if(!s)return NextResponse.json({message:'Sesi berakhir.'},{status:401});try{const {date,records}=await req.json();if(!date||!Array.isArray(records))return NextResponse.json({message:'Data kehadiran tidak lengkap.'},{status:400});const sql=db();const d=await sql`INSERT INTO attendance_days(license_id,attendance_date) VALUES(${s.licenseId},${date}::date) ON CONFLICT(license_id,attendance_date) DO UPDATE SET attendance_date=EXCLUDED.attendance_date RETURNING id`;const dayId=d[0].id;if(records.length){await sql`INSERT INTO attendance_records(attendance_day_id,student_id,status,note)
 SELECT ${dayId},st.id,x.status,x.note FROM jsonb_to_recordset(${JSON.stringify(records)}::jsonb) AS x(student_id text,status text,note text)
 JOIN students st ON st.id=x.student_id::uuid AND st.license_id=${s.licenseId} AND st.status<>'Dihapus'
