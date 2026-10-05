@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "test:import": "node --experimental-strip-types scripts/test-excel-import.mts"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.0.2",
