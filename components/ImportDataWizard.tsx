@@ -65,7 +65,7 @@ export default function ImportDataWizard({kind,data,onClose,onDone}:{kind:Kind;d
    const original=eligible.find((s:any)=>norm(s.subjectHint)===hints[0])?.subjectHint||'';
    const hit=closestSubject(subjectCatalog,original);
    if(hit){setSubject(hit.id);setNewSubject('')}else{setSubject('__new__');setNewSubject(original)}
-  }else if((subjectCatalog).length===1){setSubject(data.subjects[0].id);setNewSubject('')}
+  }else if(subjectCatalog.length===1){setSubject(subjectCatalog[0].id);setNewSubject('')}
   else{setSubject('');setNewSubject('')}
  }
 
