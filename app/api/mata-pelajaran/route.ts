@@ -23,8 +23,9 @@ export async function PATCH(req: Request) {
   if (!s) return NextResponse.json({ message: 'Sesi berakhir.' }, { status: 401 });
   try {
     const b = await req.json(); const sql = db();
-    await sql`UPDATE subjects SET name=${b.name},teacher_name=${b.teacher_name || null},mastery_score=${Number(b.mastery_score || 75)},updated_at=now() WHERE id=${b.id} AND license_id=${s.licenseId}`;
-    return NextResponse.json({ ok: true });
+    const r=await sql`UPDATE subjects SET name=${b.name},teacher_name=${b.teacher_name || null},mastery_score=${Number(b.mastery_score || 75)},updated_at=now() WHERE id=${b.id} AND license_id=${s.licenseId} AND (${b.expected_updated_at||null}::timestamptz IS NULL OR updated_at=${b.expected_updated_at||null}::timestamptz) RETURNING updated_at`;
+    if(!r[0])return NextResponse.json({message:'Mata pelajaran sudah berubah dari perangkat lain. Muat ulang sebelum menyimpan.'},{status:409});
+    return NextResponse.json({ ok: true,updated_at:r[0].updated_at });
   } catch (e) { console.error(e); return NextResponse.json({ message: 'Mata pelajaran belum berhasil diperbarui.' }, { status: 500 }); }
 }
 
