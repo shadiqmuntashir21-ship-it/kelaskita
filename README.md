@@ -41,3 +41,5 @@ Skema induk ada di `database/schema.sql`. Snapshot V3 tersedia di `database/sche
 - Onboarding khusus pengguna yang sudah memiliki data sebelumnya.
 - Multi-device cloud dengan batas awal 5 perangkat aktif per lisensi.
 - Proteksi konflik edit untuk data inti saat dipakai dari beberapa perangkat.
+
+<!-- release: smart-excel-reader-final-2026-10-05 -->
