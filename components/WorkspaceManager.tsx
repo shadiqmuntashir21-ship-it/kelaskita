@@ -38,7 +38,7 @@ export default function WorkspaceManager({data,onChange}:{data:any;onChange:()=>
     <form className="workspace-assignment-form" onSubmit={addAssignment}>
      <label className="field"><span>Kelas</span><select className="input" name="class_id" required><option value="">Pilih kelas</option>{(data.classes||[]).map((c:any)=><option key={c.id} value={c.id}>{c.name}</option>)}</select></label>
      <div className="workspace-subject-mode"><button type="button" className={subjectMode==='existing'?'active':''} onClick={()=>setSubjectMode('existing')}>Mapel tersedia</button><button type="button" className={subjectMode==='new'?'active':''} onClick={()=>setSubjectMode('new')}>Mapel baru</button></div>
-     {subjectMode==='existing'?<label className="field"><span>Mata Pelajaran</span><select className="input" name="subject_id" required><option value="">Pilih mapel</option>{(data.subjects||[]).map((s:any)=><option key={s.id} value={s.id}>{s.name}</option>)}</select></label>:<label className="field"><span>Nama Mata Pelajaran Baru</span><input className="input" name="subject_name" placeholder="Contoh: Matematika" required/></label>}
+     {subjectMode==='existing'?<label className="field"><span>Mata Pelajaran</span><select className="input" name="subject_id" required><option value="">Pilih mapel</option>{(data.subjectCatalog||data.subjects||[]).map((s:any)=><option key={s.id} value={s.id}>{s.name}</option>)}</select></label>:<label className="field"><span>Nama Mata Pelajaran Baru</span><input className="input" name="subject_name" placeholder="Contoh: Matematika" required/></label>}
      <button className="btn btn-soft full-btn" disabled={busy}><Layers3 size={15}/>Hubungkan Mapel ke Kelas</button>
     </form>
    </div>
