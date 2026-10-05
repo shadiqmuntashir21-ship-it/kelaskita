@@ -67,12 +67,13 @@ export async function GET(req:Request){
    sql`SELECT ar.student_id,ar.status,ar.note
        FROM attendance_records ar JOIN attendance_days ad ON ad.id=ar.attendance_day_id
        WHERE ad.license_id=${s.licenseId} AND ad.class_id=${classId} AND ad.attendance_date=${date}::date`,
-   sql`SELECT st.id student_id,COUNT(ar.id) total,
-       COUNT(*) FILTER(WHERE ar.status='Hadir') hadir,
-       COUNT(*) FILTER(WHERE ar.status='Sakit') sakit,
-       COUNT(*) FILTER(WHERE ar.status='Izin') izin,
-       COUNT(*) FILTER(WHERE ar.status='Alfa') alfa,
-       COUNT(*) FILTER(WHERE ar.status='Terlambat') terlambat
+   sql`SELECT st.id student_id,
+       COUNT(ar.id) FILTER(WHERE ad.id IS NOT NULL) total,
+       COUNT(*) FILTER(WHERE ad.id IS NOT NULL AND ar.status='Hadir') hadir,
+       COUNT(*) FILTER(WHERE ad.id IS NOT NULL AND ar.status='Sakit') sakit,
+       COUNT(*) FILTER(WHERE ad.id IS NOT NULL AND ar.status='Izin') izin,
+       COUNT(*) FILTER(WHERE ad.id IS NOT NULL AND ar.status='Alfa') alfa,
+       COUNT(*) FILTER(WHERE ad.id IS NOT NULL AND ar.status='Terlambat') terlambat
        FROM class_enrollments ce
        JOIN students st ON st.id=ce.student_id
        LEFT JOIN attendance_records ar ON ar.student_id=st.id
