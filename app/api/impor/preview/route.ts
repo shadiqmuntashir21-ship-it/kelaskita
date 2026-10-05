@@ -36,10 +36,18 @@ export async function POST(req:Request){
     if(buffer.length>8*1024*1024)return NextResponse.json({message:'File terlalu besar. Maksimal 8 MB agar dapat diproses dengan aman.'},{status:413});
     const sheets=await analyzeWorkbook(buffer,kind);
     if(!sheets.length)return NextResponse.json({message:'Tidak menemukan tabel yang dapat dibaca dari workbook ini.'},{status:400});
+    const classSheets=sheets.filter((x:any)=>x.classHint&&x.suggestions?.name);
+    const totalRows=classSheets.reduce((n:number,x:any)=>n+(x.rows?.length||0),0);
+    const totalValues=classSheets.reduce((n:number,x:any)=>n+(x.rows||[]).reduce((a:number,row:any)=>a+(x.scoreColumns||[]).filter((col:any)=>row[col.column]!==''&&row[col.column]!==null&&row[col.column]!==undefined).length,0),0);
     return NextResponse.json({
       sourceName:fileName,
       sheets,
       suggestedSheetIndex:0,
+      workbook:{
+        multiClassSuggested:kind==='nilai'&&classSheets.length>=2,
+        classSheets:classSheets.map((x:any)=>({name:x.name,classHint:x.classHint,rows:x.rows?.length||0,scoreColumns:x.scoreColumns?.length||0,isFormative:!!x.isFormative})),
+        totalRows,totalValues
+      },
       message:'KelasKita membaca struktur file secara adaptif. Periksa hasil pemetaan sebelum mengimpor.'
     });
   }catch(e:any){
