@@ -87,16 +87,16 @@ export async function GET(req:Request){
        FROM attendance_records ar JOIN attendance_days ad ON ad.id=ar.attendance_day_id
        WHERE ad.license_id=${s.licenseId} AND ad.class_id=${classId} AND ad.attendance_date=${date}::date`,
    sql`SELECT st.id student_id,
-       COUNT(ar.id) FILTER(WHERE ad.id IS NOT NULL) total,
-       COUNT(*) FILTER(WHERE ad.id IS NOT NULL AND ar.status='Hadir') hadir,
-       COUNT(*) FILTER(WHERE ad.id IS NOT NULL AND ar.status='Sakit') sakit,
-       COUNT(*) FILTER(WHERE ad.id IS NOT NULL AND ar.status='Izin') izin,
-       COUNT(*) FILTER(WHERE ad.id IS NOT NULL AND ar.status='Alfa') alfa,
-       COUNT(*) FILTER(WHERE ad.id IS NOT NULL AND ar.status='Terlambat') terlambat
+       COUNT(ad.id)::int total,
+       COUNT(ad.id) FILTER(WHERE COALESCE(ar.status,'Hadir')='Hadir')::int hadir,
+       COUNT(ad.id) FILTER(WHERE ar.status='Sakit')::int sakit,
+       COUNT(ad.id) FILTER(WHERE ar.status='Izin')::int izin,
+       COUNT(ad.id) FILTER(WHERE ar.status='Alfa')::int alfa,
+       COUNT(ad.id) FILTER(WHERE ar.status='Terlambat')::int terlambat
        FROM class_enrollments ce
        JOIN students st ON st.id=ce.student_id
-       LEFT JOIN attendance_records ar ON ar.student_id=st.id
-       LEFT JOIN attendance_days ad ON ad.id=ar.attendance_day_id AND ad.license_id=${s.licenseId} AND ad.class_id=${classId}
+       LEFT JOIN attendance_days ad ON ad.license_id=${s.licenseId} AND ad.class_id=${classId}
+       LEFT JOIN attendance_records ar ON ar.attendance_day_id=ad.id AND ar.student_id=st.id
        WHERE ce.license_id=${s.licenseId} AND ce.class_id=${classId} AND ce.status='Aktif' AND st.status<>'Dihapus'
        GROUP BY st.id`,
    sql`SELECT n.id,n.student_id,st.name student_name,n.category,n.title,n.content,n.status,n.occurred_at
