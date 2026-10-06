@@ -52,7 +52,7 @@ export async function POST(req:Request){
    sql`SELECT id FROM classes WHERE license_id=${s.licenseId} AND academic_year=${newYear} AND name=${newName} LIMIT 1`
   ]);
   const validStudentIds=new Set((students as any[]).map(x=>String(x.id)));
-  const ids=[...new Set(b.promote_ids.map(String))].filter((id:string)=>validStudentIds.has(id));
+  const ids:string[]=[...new Set<string>((b.promote_ids as any[]).map((x:any)=>String(x)))].filter(id=>validStudentIds.has(id));
   const newClassId=String(existingTarget[0]?.id||randomUUID());
   const archiveSummary={
    version:'KelasKita-V7',storage_mode:'ringkasan',class_id:classId,class_name:cls.name,academic_year:cls.academic_year,
