@@ -14,12 +14,14 @@ export async function GET(){
  if(!await getOwnerSession())return NextResponse.json({message:'Tidak berwenang.'},{status:401});
  try{
   await ensureV5Schema();const sql=db();
-  const [size,licenses,students,scores,dailyAttendance,subjectAttendance,classes,logs,largest]=await Promise.all([
+  const [size,licenses,students,scores,dailyDays,dailyExceptions,subjectSessions,subjectExceptions,classes,logs,largest]=await Promise.all([
    sql`SELECT pg_database_size(current_database())::bigint AS bytes`,
    sql`SELECT COUNT(*)::int n FROM licenses WHERE is_active=true`,
    sql`SELECT COUNT(DISTINCT ce.student_id)::int n FROM class_enrollments ce JOIN classes c ON c.id=ce.class_id WHERE ce.status='Aktif' AND c.is_active=true`,
    sql`SELECT COUNT(*)::bigint n FROM student_scores`,
+   sql`SELECT COUNT(*)::bigint n FROM attendance_days`,
    sql`SELECT COUNT(*)::bigint n FROM attendance_records`,
+   sql`SELECT COUNT(*)::bigint n FROM subject_attendance_sessions`,
    sql`SELECT COUNT(*)::bigint n FROM subject_attendance_records`,
    sql`SELECT COUNT(*)::int n FROM classes WHERE is_active=true`,
    sql`SELECT COUNT(*)::bigint n FROM activity_logs`,
@@ -30,8 +32,9 @@ export async function GET(){
   return NextResponse.json({
    target_teachers:200,status,used_bytes:used,limit_bytes:limit,percent,
    active_teachers:Number(licenses[0]?.n||0),active_students:Number(students[0]?.n||0),active_classes:Number(classes[0]?.n||0),
-   scores:Number(scores[0]?.n||0),attendance:Number(dailyAttendance[0]?.n||0)+Number(subjectAttendance[0]?.n||0),
-   daily_attendance:Number(dailyAttendance[0]?.n||0),subject_attendance:Number(subjectAttendance[0]?.n||0),
+   scores:Number(scores[0]?.n||0),attendance:Number(dailyDays[0]?.n||0)+Number(subjectSessions[0]?.n||0),
+   daily_attendance:Number(dailyDays[0]?.n||0),subject_attendance:Number(subjectSessions[0]?.n||0),
+   attendance_exception_rows:Number(dailyExceptions[0]?.n||0)+Number(subjectExceptions[0]?.n||0),
    activity_logs:Number(logs[0]?.n||0),largest_tables:largest
   });
  }catch(e){console.error(e);return NextResponse.json({message:'Kapasitas sistem belum dapat dibaca.'},{status:500})}
