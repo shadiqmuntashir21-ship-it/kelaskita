@@ -34,8 +34,8 @@ function resolveBackupPeriod(url:URL):BackupPeriod{
 async function counts(sql:any,licenseId:string,classId:string){
  const [students,attendance,subjectAttendance,notes,achievements,followups,agendas,assessments,scores,reports,admin]=await Promise.all([
   sql`SELECT COUNT(*)::int count FROM class_enrollments WHERE license_id=${licenseId} AND class_id=${classId} AND status='Aktif'`,
-  sql`SELECT COUNT(ar.*)::int count FROM attendance_records ar JOIN attendance_days ad ON ad.id=ar.attendance_day_id WHERE ad.license_id=${licenseId} AND ad.class_id=${classId}`,
-  sql`SELECT COUNT(sar.*)::int count FROM subject_attendance_records sar JOIN subject_attendance_sessions sas ON sas.id=sar.session_id WHERE sas.license_id=${licenseId} AND sas.class_id=${classId}`,
+  sql`SELECT COUNT(*)::int count FROM attendance_days WHERE license_id=${licenseId} AND class_id=${classId}`,
+  sql`SELECT COUNT(*)::int count FROM subject_attendance_sessions WHERE license_id=${licenseId} AND class_id=${classId}`,
   sql`SELECT COUNT(*)::int count FROM student_notes WHERE license_id=${licenseId} AND class_id=${classId}`,
   sql`SELECT COUNT(*)::int count FROM achievements WHERE license_id=${licenseId} AND class_id=${classId}`,
   sql`SELECT COUNT(*)::int count FROM follow_ups WHERE license_id=${licenseId} AND class_id=${classId}`,
@@ -81,6 +81,7 @@ export async function GET(req:Request){
    const payload={
     version:'KelasKita-V7',
     created_at:new Date().toISOString(),
+    attendance_storage:'hadir-default-exceptions-only',
     backup_scope:period.scope,
     period:period.scope==='period'?{start_month:period.startMonth,end_month:period.endMonth,months:period.months}:null,
     class:{id:cls.id,name:cls.name,academic_year:cls.academic_year},
