@@ -106,8 +106,8 @@ async function bytes(wb){
     const ws=wb.addWorksheet(String(name));
     ws.addRow(['NILAI HASIL UJIAN FORMATIF '+name+' 2026']);
     while(ws.rowCount<Number(headerRow)-1)ws.addRow([]);
-    ws.addRow(['NAMA','JULI','AGUSTUS','SEPTEMBER']);
-    for(const row of data)ws.addRow(row);
+    ws.addRow(['NAMA','JULI','AGUSTUS','SEPTEMBER','OKTOBER','NOVEMBER','DESEMBER']);
+    for(const row of data)ws.addRow([...row,'','','']);
   }
   const sheets=await analyzeWorkbook(await bytes(wb),'nilai');
   const classSheets=sheets.filter(s=>['2A','2B','2C','2D'].includes(s.classHint));
@@ -116,6 +116,11 @@ async function bytes(wb){
     assert.equal(s.suggestions.name,'NAMA');
     assert.ok(s.scoreColumns.some(x=>/Formatif Juli/i.test(x.name)),JSON.stringify(s.scoreColumns));
     assert.ok(s.scoreColumns.some(x=>/Formatif September/i.test(x.name)),JSON.stringify(s.scoreColumns));
+    assert.ok(!s.scoreColumns.some(x=>/Formatif Oktober/i.test(x.name)),JSON.stringify(s.scoreColumns));
+    assert.ok(!s.scoreColumns.some(x=>/Formatif November/i.test(x.name)),JSON.stringify(s.scoreColumns));
+    assert.ok(!s.scoreColumns.some(x=>/Formatif Desember/i.test(x.name)),JSON.stringify(s.scoreColumns));
+    if(s.classHint==='2B')assert.ok(s.scoreColumns.some(x=>/Formatif Agustus/i.test(x.name)),JSON.stringify(s.scoreColumns));
+    else assert.ok(!s.scoreColumns.some(x=>/Formatif Agustus/i.test(x.name)),JSON.stringify(s.scoreColumns));
   }
 }
 console.log('Smart Excel Reader: 6 skenario lulus termasuk workbook multi-kelas FORMATIF.');
