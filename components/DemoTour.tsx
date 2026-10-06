@@ -18,7 +18,7 @@ const steps=[
 export default function DemoTour({view,setView,restartToken=0}:{view:DemoView;setView:(v:DemoView)=>void;restartToken?:number}){
  const[offer,setOffer]=useState(true),[active,setActive]=useState(false),[index,setIndex]=useState(0);
  const step=steps[index];
- const reduceMotion=useMemo(()=>typeof window!=='undefined'&&window.matchMedia?.('(prefers-reduced-motion: reduce)').matches,false);
+ const reduceMotion=useMemo(()=>typeof window!=='undefined'&&!!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches,[]);
 
  function clearHighlight(){document.querySelectorAll('.kk-tour-highlight').forEach(el=>el.classList.remove('kk-tour-highlight'))}
  function start(){setOffer(false);setIndex(0);setActive(true)}
