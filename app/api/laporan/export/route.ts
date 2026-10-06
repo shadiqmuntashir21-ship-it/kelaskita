@@ -12,18 +12,18 @@ const titles:any={siswa:'Daftar Siswa',kehadiran:'Rekap Kehadiran', 'kehadiran-m
 
 async function data(sql:any,id:string,classId:string,j:string,month:string,subject?:string|null){
  if(j==='siswa'){const x=await sql`SELECT st.nis,st.nisn,st.name,st.gender,st.guardian_name,st.guardian_phone,st.phone,st.address,st.status FROM class_enrollments ce JOIN students st ON st.id=ce.student_id WHERE ce.license_id=${id} AND ce.class_id=${classId} AND ce.status='Aktif' AND st.status<>'Dihapus' ORDER BY st.name`;return{h:['NIS','NISN','Nama Siswa','Jenis Kelamin','Wali Siswa','No. Wali','No. Siswa','Alamat','Status'],r:x.map((a:any)=>[a.nis,a.nisn,a.name,a.gender,a.guardian_name,a.guardian_phone,a.phone,a.address,a.status])}}
- if(j==='kehadiran'){const d=`${month}-01`,x=await sql`SELECT st.nis,st.name,COUNT(*) FILTER(WHERE ar.status='Hadir') hadir,COUNT(*) FILTER(WHERE ar.status='Sakit') sakit,COUNT(*) FILTER(WHERE ar.status='Izin') izin,COUNT(*) FILTER(WHERE ar.status='Alfa') alfa,COUNT(*) FILTER(WHERE ar.status='Terlambat') terlambat,COUNT(*) FILTER(WHERE ar.status='Dispensasi') dispensasi FROM class_enrollments ce JOIN students st ON st.id=ce.student_id LEFT JOIN attendance_days ad ON ad.license_id=${id} AND ad.class_id=${classId} AND ad.attendance_date>=${d}::date AND ad.attendance_date<(${d}::date+interval '1 month') LEFT JOIN attendance_records ar ON ar.attendance_day_id=ad.id AND ar.student_id=st.id WHERE ce.license_id=${id} AND ce.class_id=${classId} AND ce.status='Aktif' AND st.status<>'Dihapus' GROUP BY st.id,st.nis,st.name ORDER BY st.name`;return{h:['NIS','Nama Siswa','Hadir','Sakit','Izin','Alfa','Terlambat','Dispensasi'],r:x.map((a:any)=>[a.nis,a.name,a.hadir,a.sakit,a.izin,a.alfa,a.terlambat,a.dispensasi])}}
+ if(j==='kehadiran'){const d=`${month}-01`,x=await sql`SELECT st.nis,st.name,COUNT(ad.id) FILTER(WHERE COALESCE(ar.status,'Hadir')='Hadir')::int hadir,COUNT(ad.id) FILTER(WHERE ar.status='Sakit')::int sakit,COUNT(ad.id) FILTER(WHERE ar.status='Izin')::int izin,COUNT(ad.id) FILTER(WHERE ar.status='Alfa')::int alfa,COUNT(ad.id) FILTER(WHERE ar.status='Terlambat')::int terlambat,COUNT(ad.id) FILTER(WHERE ar.status='Dispensasi')::int dispensasi FROM class_enrollments ce JOIN students st ON st.id=ce.student_id LEFT JOIN attendance_days ad ON ad.license_id=${id} AND ad.class_id=${classId} AND ad.attendance_date>=${d}::date AND ad.attendance_date<(${d}::date+interval '1 month') LEFT JOIN attendance_records ar ON ar.attendance_day_id=ad.id AND ar.student_id=st.id WHERE ce.license_id=${id} AND ce.class_id=${classId} AND ce.status='Aktif' AND st.status<>'Dihapus' GROUP BY st.id,st.nis,st.name ORDER BY st.name`;return{h:['NIS','Nama Siswa','Hadir','Sakit','Izin','Alfa','Terlambat','Dispensasi'],r:x.map((a:any)=>[a.nis,a.name,a.hadir,a.sakit,a.izin,a.alfa,a.terlambat,a.dispensasi])}}
  if(j==='kehadiran-mapel'){
   if(!subject)return{h:['Keterangan'],r:[['Pilih mata pelajaran terlebih dahulu.']]};
   const d=`${month}-01`;
   const x=await sql`SELECT st.nis,st.name,
-    COUNT(sar.id)::int pertemuan_tercatat,
-    COUNT(*) FILTER(WHERE sar.status='Hadir') hadir,
-    COUNT(*) FILTER(WHERE sar.status='Sakit') sakit,
-    COUNT(*) FILTER(WHERE sar.status='Izin') izin,
-    COUNT(*) FILTER(WHERE sar.status='Alfa') alfa,
-    COUNT(*) FILTER(WHERE sar.status='Terlambat') terlambat,
-    COUNT(*) FILTER(WHERE sar.status='Dispensasi') dispensasi
+    COUNT(sas.id)::int pertemuan_tercatat,
+    COUNT(sas.id) FILTER(WHERE COALESCE(sar.status,'Hadir')='Hadir')::int hadir,
+    COUNT(sas.id) FILTER(WHERE sar.status='Sakit')::int sakit,
+    COUNT(sas.id) FILTER(WHERE sar.status='Izin')::int izin,
+    COUNT(sas.id) FILTER(WHERE sar.status='Alfa')::int alfa,
+    COUNT(sas.id) FILTER(WHERE sar.status='Terlambat')::int terlambat,
+    COUNT(sas.id) FILTER(WHERE sar.status='Dispensasi')::int dispensasi
     FROM class_enrollments ce
     JOIN students st ON st.id=ce.student_id
     LEFT JOIN subject_attendance_sessions sas
