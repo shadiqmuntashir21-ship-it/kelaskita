@@ -96,7 +96,8 @@ export async function POST(req:Request){
       const byName=new Map<string,any[]>();
       classStudents.forEach(st=>{const k=norm(st.name);byName.set(k,[...(byName.get(k)||[]),st])});
 
-      const cols=(sh.assessments||sh.scoreColumns||[]).filter((x:any)=>x.include!==false&&x.column&&x.name);
+      const candidateCols=(sh.assessments||sh.scoreColumns||[]).filter((x:any)=>x.include!==false&&x.column&&x.name);
+      const cols=candidateCols.filter((col:any)=>sh.rows.some((row:any)=>parseScore(row[col.column])!==null));
       const existingAssessments=subjectId&&classId?await sql`SELECT id,name FROM assessments WHERE license_id=${s.licenseId} AND class_id=${classId} AND subject_id=${subjectId} AND semester=${body.semester||'Ganjil'}`:[];
       const existingAssessmentByName=new Map((existingAssessments as any[]).map(a=>[norm(a.name),a]));
       newAssessments+=cols.filter((x:any)=>!existingAssessmentByName.has(norm(x.name))).length;
