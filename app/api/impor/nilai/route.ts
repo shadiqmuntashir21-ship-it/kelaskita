@@ -49,7 +49,7 @@ export async function POST(req:Request){
     await ensureV5Schema();
     const body=await req.json();
     const rawCols=(body.assessments||[]).filter((x:any)=>x.include!==false&&x.column&&x.name);
-    const rows=Array.isArray(rows)?rows:[];
+    const rows:any[]=Array.isArray(body.rows)?body.rows:[];
     const cols=rawCols.filter((col:any)=>rows.some((row:any)=>parseScore(row[col.column])!==null));
     if(!body.semester||!rows.length||!cols.length)return NextResponse.json({message:'Semester dan minimal satu kolom yang benar-benar berisi nilai wajib dipilih.'},{status:400});
     if(!body.subject_id&&!str(body.subject_name))return NextResponse.json({message:'Pilih mata pelajaran atau isi nama mata pelajaran baru.'},{status:400});
