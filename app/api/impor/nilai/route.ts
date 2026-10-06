@@ -48,10 +48,12 @@ export async function POST(req:Request){
   try{
     await ensureV5Schema();
     const body=await req.json();
-    const cols=(body.assessments||[]).filter((x:any)=>x.include!==false&&x.column&&x.name);
-    if(!body.semester||!Array.isArray(body.rows)||!body.rows.length||!cols.length)return NextResponse.json({message:'Semester dan minimal satu kolom nilai wajib dipilih.'},{status:400});
+    const rawCols=(body.assessments||[]).filter((x:any)=>x.include!==false&&x.column&&x.name);
+    const rows=Array.isArray(rows)?rows:[];
+    const cols=rawCols.filter((col:any)=>rows.some((row:any)=>parseScore(row[col.column])!==null));
+    if(!body.semester||!rows.length||!cols.length)return NextResponse.json({message:'Semester dan minimal satu kolom yang benar-benar berisi nilai wajib dipilih.'},{status:400});
     if(!body.subject_id&&!str(body.subject_name))return NextResponse.json({message:'Pilih mata pelajaran atau isi nama mata pelajaran baru.'},{status:400});
-    const identity=resolveIdentity(body.rows,body.identity||{});
+    const identity=resolveIdentity(rows,body.identity||{});
     if(!identity.name&&!identity.nis&&!identity.nisn)return NextResponse.json({message:'KelasKita belum menemukan identitas siswa. Pilih kolom Nama, NIS, atau NISN.'},{status:400});
 
     const sql=db(),isCommit=body.action==='commit';
@@ -69,7 +71,7 @@ export async function POST(req:Request){
     const scoreMap=new Map<string,any>();(scores as any[]).forEach(sc=>scoreMap.set(`${norm(sc.assessment_name)}::${sc.student_id}`,sc));
 
     const matches:any[]=[],unmatched:any[]=[],ambiguous:any[]=[],nameReview:any[]=[],conflicts:any[]=[];let values=0;
-    body.rows.forEach((row:any,i:number)=>{
+    rows.forEach((row:any,i:number)=>{
       const m=match(row,identity),sourceName=(identity.name&&str(row[identity.name]))||`Baris ${i+1}`;
       if(!m.student){(m.kind==='ambiguous'?ambiguous:unmatched).push({row:i+1,name:sourceName});return}
       if(m.kind==='name')nameReview.push({row:i+1,name:sourceName,studentId:m.student.id,matchedName:m.student.name});
@@ -81,7 +83,7 @@ export async function POST(req:Request){
       });
     });
     const stats={
-      rows:body.rows.length,matched:matches.length,unmatched:unmatched.length,ambiguous:ambiguous.length,nameReview:nameReview.length,
+      rows:rows.length,matched:matches.length,unmatched:unmatched.length,ambiguous:ambiguous.length,nameReview:nameReview.length,
       values,conflicts:conflicts.length,newAssessments:cols.filter((c:any)=>!existingByName.has(norm(c.name))).length,
       subjectName,subjectWillCreate:!subjectId
     };
@@ -99,7 +101,7 @@ export async function POST(req:Request){
         assessment=inserted[0];existingByName.set(norm(col.name),assessment);createdAssessments++;
       }
       const payload:any[]=[];
-      body.rows.forEach((row:any)=>{
+      rows.forEach((row:any)=>{
         const m=match(row,identity);if(!m.student||m.kind==='ambiguous'||m.kind==='unmatched'||(m.kind==='name'&&!allowName))return;
         const v=parseScore(row[col.column]);if(v===null)return;
         const key=`${norm(col.name)}::${m.student.id}`,old=scoreMap.get(key);
@@ -115,7 +117,7 @@ export async function POST(req:Request){
         imported+=payload.length;
       }
     }
-    const summary={subject_id:subjectId,subject_name:subjectName,class_id:cls.id,class_name:cls.name,semester:body.semester,rows:body.rows.length,imported,kept,createdAssessments,createdSubject:resolved.created,unmatched:unmatched.length,ambiguous:ambiguous.length,sourceName:body.sourceName||null};
+    const summary={subject_id:subjectId,subject_name:subjectName,class_id:cls.id,class_name:cls.name,semester:body.semester,rows:rows.length,imported,kept,createdAssessments,createdSubject:resolved.created,unmatched:unmatched.length,ambiguous:ambiguous.length,sourceName:body.sourceName||null};
     await sql`INSERT INTO import_batches(license_id,kind,source_name,summary) VALUES(${s.licenseId},'nilai',${body.sourceName||null},${JSON.stringify(summary)}::jsonb)`;
     return NextResponse.json({ok:true,...summary});
   }catch(e){
