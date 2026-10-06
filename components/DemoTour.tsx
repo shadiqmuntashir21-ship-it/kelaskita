@@ -6,13 +6,13 @@ import {ArrowLeft,ArrowRight,CheckCircle2,Compass,X} from 'lucide-react';
 type DemoView='beranda'|'siswa'|'kehadiran'|'akademik'|'jadwal'|'catatan'|'prestasi'|'tindak'|'agenda'|'administrasi'|'laporan'|'pengaturan';
 
 const steps=[
- {view:'beranda',target:'demo-banner',title:'Kenali Mode Demo',copy:'Mode Demo berisi data contoh yang sudah terisi. Semua perubahan di sini bersifat sementara dan tidak menyentuh data pengguna nyata.'},
- {view:'beranda',target:'beranda-ringkasan',title:'Mulai dari pekerjaan penting',copy:'Beranda merangkum kondisi kelas dan membantu guru melihat hal yang perlu perhatian tanpa membuka banyak menu.'},
- {view:'beranda',target:'beranda-perhatian',title:'Peringatan yang bisa ditindaklanjuti',copy:'KelasKita membawa siswa yang perlu perhatian ke depan agar guru tidak perlu mencari satu per satu.'},
- {view:'kehadiran',target:'kehadiran-ruang',title:'Kehadiran yang bisa dibuka kembali',copy:'Pilih tanggal, isi kehadiran, lalu buka lagi tanggal lama kapan pun jika perlu diperbaiki.'},
- {view:'akademik',target:'akademik-ruang',title:'Nilai tidak dimulai dari nol',copy:'Penilaian lama tetap menampilkan nilai yang sudah tersimpan. Guru cukup melengkapi atau mengubah bagian yang diperlukan.'},
- {view:'laporan',target:'laporan-ruang',title:'Input sekali, rekap ikut tersusun',copy:'Laporan membantu guru mengambil rekap dari data yang sudah dikerjakan, tanpa mengetik ulang pekerjaan yang sama.'},
- {view:'beranda',target:'demo-banner',title:'Siap menjelajah sendiri',copy:'Sekarang Anda sudah mengenal alur utamanya. Silakan buka menu lain atau lanjut ke pembelian jika KelasKita sesuai kebutuhan Anda.'}
+ {view:'beranda',selector:'.demo-banner',title:'Kenali Mode Demo',copy:'Mode Demo berisi data contoh yang sudah terisi. Semua perubahan di sini bersifat sementara dan tidak menyentuh data pengguna nyata.'},
+ {view:'beranda',selector:'.welcome-panel',title:'Mulai dari pekerjaan penting',copy:'Beranda merangkum kondisi kelas dan membantu guru melihat hal yang perlu perhatian tanpa membuka banyak menu.'},
+ {view:'beranda',selector:'.dashboard-grid .card',title:'Peringatan yang bisa ditindaklanjuti',copy:'KelasKita membawa siswa yang perlu perhatian ke depan agar guru tidak perlu mencari satu per satu.'},
+ {view:'kehadiran',selector:'.attendance-workspace',title:'Kehadiran yang bisa dibuka kembali',copy:'Pilih tanggal, isi kehadiran, lalu buka lagi tanggal lama kapan pun jika perlu diperbaiki.'},
+ {view:'akademik',selector:'.academic-import-toolbar',title:'Nilai tidak dimulai dari nol',copy:'Penilaian lama tetap menampilkan nilai yang sudah tersimpan. Guru cukup melengkapi atau mengubah bagian yang diperlukan.'},
+ {view:'laporan',selector:'.report-toolbar',title:'Input sekali, rekap ikut tersusun',copy:'Laporan membantu guru mengambil rekap dari data yang sudah dikerjakan, tanpa mengetik ulang pekerjaan yang sama.'},
+ {view:'beranda',selector:'.demo-banner',title:'Siap menjelajah sendiri',copy:'Sekarang Anda sudah mengenal alur utamanya. Silakan buka menu lain atau lanjut ke pembelian jika KelasKita sesuai kebutuhan Anda.'}
 ] as const;
 
 export default function DemoTour({view,setView,restartToken=0}:{view:DemoView;setView:(v:DemoView)=>void;restartToken?:number}){
@@ -32,11 +32,11 @@ export default function DemoTour({view,setView,restartToken=0}:{view:DemoView;se
   if(view!==step.view){setView(step.view as DemoView);return}
   const timer=window.setTimeout(()=>{
    clearHighlight();
-   const el=document.querySelector('[data-tour="'+step.target+'"]') as HTMLElement|null;
+   const el=document.querySelector(step.selector) as HTMLElement|null;
    if(el){el.classList.add('kk-tour-highlight');el.scrollIntoView({behavior:reduceMotion?'auto':'smooth',block:'center',inline:'nearest'})}
   },120);
   return()=>window.clearTimeout(timer);
- },[active,index,view,step.view,step.target,reduceMotion,setView]);
+ },[active,index,view,step.view,step.selector,reduceMotion,setView]);
  useEffect(()=>()=>clearHighlight(),[]);
 
  return <>
