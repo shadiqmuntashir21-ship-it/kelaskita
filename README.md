@@ -56,3 +56,37 @@ Skema induk ada di `database/schema.sql`. Snapshot V3 tersedia di `database/sche
 - Tutup tahun ajaran per kelas; kelas lain pada lisensi yang sama tidak disentuh.
 - Pembelian dan lisensi manual mengikuti model 1 lisensi = 1 guru; kelas ditentukan saat onboarding.
 - Snapshot skema V5 tersedia di `database/schema-v5.sql`.
+
+
+## KelasKita V7 — target 200 guru
+
+V7 menjaga fondasi V6 dan menambah disiplin kapasitas agar satu project Neon tetap ringan untuk target operasional awal hingga sekitar 200 guru.
+
+### Perubahan utama
+- **Interactive Tour hanya pada Mode Demo**: calon pembeli dapat memilih `Mulai Tur` atau `Jelajahi Sendiri`. Tur dapat dibuka ulang dari banner demo.
+- **Cadangan fleksibel**: guru dapat mengunduh data satu bulan, beberapa bulan (misalnya 5 bulan), sampai maksimal 12 bulan dalam satu file, atau seluruh data kelas. Lama semester tidak di-hardcode; guru memilih bulan awal dan akhir sesuai kalender sekolah.
+- **Cadangan tidak disimpan sebagai blob di Neon**: file JSON diunduh ke perangkat guru.
+- **Tutup Tahun Ajaran hemat storage**: sebelum menutup tahun guru wajib mengunduh cadangan lengkap. Neon hanya menyimpan ringkasan kecil di `class_year_archives`, lalu data operasional kelas lama dibersihkan setelah kelas baru berhasil disiapkan.
+- **Kehadiran hemat storage**: keberadaan `attendance_days` / `subject_attendance_sessions` berarti absensi sudah diisi dan status default siswa adalah `Hadir`. Tabel record hanya menyimpan pengecualian (Sakit, Izin, Alfa, Terlambat, Dispensasi, atau Hadir dengan catatan). Data V6 yang menyimpan semua siswa tetap kompatibel.
+- **Pemantauan kapasitas owner**: tab Kapasitas menampilkan guru aktif, siswa, ukuran database, tabel terbesar, dan status Aman/Perlu perhatian/Kritis. Target internal awal adalah 200 guru.
+- **Retensi log**: owner dapat membersihkan `activity_logs` yang lebih lama dari 90 hari tanpa menyentuh data guru, nilai, kehadiran, lisensi, pembayaran, atau transaksi.
+
+### Prinsip penutupan tahun
+```
+Tahun aktif
+→ unduh cadangan lengkap
+→ konfirmasi cadangan
+→ buat kelas/tahun baru
+→ pindahkan siswa yang dipilih
+→ simpan ringkasan arsip kecil
+→ bersihkan data operasional kelas lama
+```
+
+Operasi tetap dibatasi oleh `license_id` dan `class_id`. Lisensi, autentikasi/PIN, pembayaran, transaksi, status aktivasi, dan perangkat tidak menjadi bagian dari pembersihan data operasional.
+
+### Validasi V7
+Sebelum deployment production:
+- `npx tsc --noEmit`
+- `npm run test:import`
+- `npm run build`
+- smoke test route publik utama
