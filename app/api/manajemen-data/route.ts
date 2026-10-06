@@ -57,8 +57,9 @@ export async function GET(req:Request){
    let period:BackupPeriod;
    try{period=resolveBackupPeriod(url)}catch(e:any){return NextResponse.json({message:e.message||'Periode cadangan tidak valid.'},{status:400})}
    const startDate=period.startDate,endExclusive=period.endExclusive;
-   const [students,attendanceDays,attendanceRecords,subjectAttendanceSessions,subjectAttendanceRecords,notes,achievements,followups,agendas,subjects,schedules,assignments,academicSettings,assessments,scores,reports,admin,officers,duties]=await Promise.all([
-    sql`SELECT st.* FROM class_enrollments ce JOIN students st ON st.id=ce.student_id WHERE ce.license_id=${s.licenseId} AND ce.class_id=${cls.id} AND ce.status='Aktif'`,
+   const [students,enrollments,attendanceDays,attendanceRecords,subjectAttendanceSessions,subjectAttendanceRecords,notes,achievements,followups,agendas,subjects,schedules,assignments,academicSettings,assessments,scores,reports,admin,officers,duties]=await Promise.all([
+    sql`SELECT DISTINCT st.* FROM class_enrollments ce JOIN students st ON st.id=ce.student_id WHERE ce.license_id=${s.licenseId} AND ce.class_id=${cls.id}`,
+    sql`SELECT id,class_id,student_id,status,enrolled_at,left_at,created_at,updated_at FROM class_enrollments WHERE license_id=${s.licenseId} AND class_id=${cls.id}`,
     sql`SELECT * FROM attendance_days WHERE license_id=${s.licenseId} AND class_id=${cls.id} AND (${startDate}::date IS NULL OR attendance_date>=${startDate}::date) AND (${endExclusive}::date IS NULL OR attendance_date<${endExclusive}::date)`,
     sql`SELECT ar.* FROM attendance_records ar JOIN attendance_days ad ON ad.id=ar.attendance_day_id WHERE ad.license_id=${s.licenseId} AND ad.class_id=${cls.id} AND (${startDate}::date IS NULL OR ad.attendance_date>=${startDate}::date) AND (${endExclusive}::date IS NULL OR ad.attendance_date<${endExclusive}::date)`,
     sql`SELECT * FROM subject_attendance_sessions WHERE license_id=${s.licenseId} AND class_id=${cls.id} AND (${startDate}::date IS NULL OR meeting_date>=${startDate}::date) AND (${endExclusive}::date IS NULL OR meeting_date<${endExclusive}::date)`,
@@ -85,7 +86,7 @@ export async function GET(req:Request){
     backup_scope:period.scope,
     period:period.scope==='period'?{start_month:period.startMonth,end_month:period.endMonth,months:period.months}:null,
     class:{id:cls.id,name:cls.name,academic_year:cls.academic_year},
-    students,subjects,schedules,teachingAssignments:assignments,academicSettings:academicSettings[0]||null,
+    students,enrollments,subjects,schedules,teachingAssignments:assignments,academicSettings:academicSettings[0]||null,
     attendanceDays,attendanceRecords,subjectAttendanceSessions,subjectAttendanceRecords,
     notes,achievements,followups,agendas,assessments,scores,reports,admin,officers,duties
    };
