@@ -6,9 +6,11 @@ import{ensureV5Schema}from'@/lib/v5-schema';
 export const runtime='nodejs';
 
 async function classCounts(sql:any,licenseId:string,classId:string){
- const [students,attendance,subjectAttendance,notes,achievements,followUps,agendas,assessments,scores,reports,admin,schedules]=await Promise.all([
+ const [students,attendanceDays,attendanceExceptions,subjectSessions,subjectExceptions,notes,achievements,followUps,agendas,assessments,scores,reports,admin,schedules]=await Promise.all([
   sql`SELECT COUNT(*)::int n FROM class_enrollments WHERE license_id=${licenseId} AND class_id=${classId} AND status='Aktif'`,
+  sql`SELECT COUNT(*)::int n FROM attendance_days WHERE license_id=${licenseId} AND class_id=${classId}`,
   sql`SELECT COUNT(ar.*)::int n FROM attendance_records ar JOIN attendance_days ad ON ad.id=ar.attendance_day_id WHERE ad.license_id=${licenseId} AND ad.class_id=${classId}`,
+  sql`SELECT COUNT(*)::int n FROM subject_attendance_sessions WHERE license_id=${licenseId} AND class_id=${classId}`,
   sql`SELECT COUNT(sar.*)::int n FROM subject_attendance_records sar JOIN subject_attendance_sessions sas ON sas.id=sar.session_id WHERE sas.license_id=${licenseId} AND sas.class_id=${classId}`,
   sql`SELECT COUNT(*)::int n FROM student_notes WHERE license_id=${licenseId} AND class_id=${classId}`,
   sql`SELECT COUNT(*)::int n FROM achievements WHERE license_id=${licenseId} AND class_id=${classId}`,
@@ -21,8 +23,9 @@ async function classCounts(sql:any,licenseId:string,classId:string){
   sql`SELECT COUNT(*)::int n FROM subject_schedules WHERE license_id=${licenseId} AND class_id=${classId}`
  ]);
  return{
-  students:students[0]?.n||0,attendance:attendance[0]?.n||0,subjectAttendance:subjectAttendance[0]?.n||0,
-  notes:notes[0]?.n||0,achievements:achievements[0]?.n||0,followUps:followUps[0]?.n||0,agendas:agendas[0]?.n||0,
+  students:students[0]?.n||0,attendanceDays:attendanceDays[0]?.n||0,attendanceExceptions:attendanceExceptions[0]?.n||0,
+  subjectSessions:subjectSessions[0]?.n||0,subjectExceptions:subjectExceptions[0]?.n||0,notes:notes[0]?.n||0,
+  achievements:achievements[0]?.n||0,followUps:followUps[0]?.n||0,agendas:agendas[0]?.n||0,
   assessments:assessments[0]?.n||0,scores:scores[0]?.n||0,reports:reports[0]?.n||0,admin:admin[0]?.n||0,schedules:schedules[0]?.n||0
  };
 }
