@@ -83,7 +83,7 @@ export default function Landing(){
           </aside>
           <div className="workspace-main">
             <div className="workspace-top">
-              <div className="workspace-greeting"><small>KAMIS, 8 OKTOBER</small><b>Selamat sore, Bu Nahdah 👋</b></div>
+              <div className="workspace-greeting"><small>KAMIS, 8 OKTOBER</small><b>Selamat sore, Bu Guru Rina 👋</b></div>
               <div className="workspace-chip">2A · Bahasa Arab</div>
             </div>
 
